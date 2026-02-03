@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weatherford HS Athlete Recruiting Board</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:20px; }
+    header { text-align:center; margin-bottom:30px; }
+    .logo { max-width:140px; margin:10px auto; display:block; }
+    nav { text-align:center; margin:20px 0; }
+    nav a { margin:0 10px; text-decoration:none; color:#0033a0; font-weight:bold; }
+    section { margin-bottom:40px; }
+    .controls { text-align:center; margin-bottom:20px; }
+    .athlete-card { 
+      display:inline-block; 
+      width:200px; 
+      margin:10px; 
+      padding:10px; 
+      border:1px solid #ccc; 
+      border-radius:5px; 
+      text-align:center; 
+      background:#f9f9f9; 
+    }
+    .athlete-card img { width:120px; height:auto; border-radius:5px; margin-bottom:10px; }
+    #rooRecruitsApp { text-align:center; }
+    #rooRecruitsApp button { 
+      padding:10px 20px; 
+      background:#0033a0; 
+      color:white; 
+      border:none; 
+      border-radius:5px; 
+      cursor:pointer; 
+      font-size:16px;
+    }
+    #rooRecruitsApp iframe { border:1px solid #ccc; border-radius:5px; margin-top:15px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Weatherford High School Athlete Recruiting Board</h1>
+  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif" class="logo" alt="Kangaroo Logo">
+  <p>Multi-sport athlete profiles for college recruiters</p>
+</header>
+
+<section class="controls">
+  <label for="sportSelect"><strong>Select Sport:</strong></label>
+  <select id="sportSelect">
+    <option value="all">All</option>
+    <option value="football">Football</option>
+    <option value="track">Track & Field</option>
+    <option value="powerlifting">Powerlifting</option>
+    <option value="baseball">Baseball</option>
+    <option value="basketball">Basketball</option>
+  </select>
+</section>
+
+<nav>
+  <a href="#2026">Class of 2026</a> |
+  <a href="#2027">Class of 2027</a> |
+  <a href="#2028">Class of 2028</a>
+</nav>
+
+<section id="2026">
+  <h2>Class of 2026</h2>
+  <div id="profiles-2026" data-grad="2026"></div>
+</section>
+
+<section id="2027">
+  <h2>Class of 2027</h2>
+  <div id="profiles-2027" data-grad="2027"></div>
+</section>
+
+<section id="2028">
+  <h2>Class of 2028</h2>
+  <div id="profiles-2028" data-grad="2028"></div>
+</section>
+
+<section id="rooRecruitsApp">
+  <h2>Manage Recruits</h2>
+  <p>Only coaches/admins should use this section to add or update athlete profiles.</p>
+
+  <button onclick="window.open('https://script.google.com/macros/s/AKfycbzcOi-mDUTXxYfhqWEIsuJbPI4XOYCZNN4F6J3k0DIaSSF89gAmvSNylJU-xMacilf_/exec', '_blank')">
+    Athlete Management
+  </button>
+
+  <iframe
+    src="https://script.google.com/macros/s/AKfycbzcOi-mDUTXxYfhqWEIsuJbPI4XOYCZNN4F6J3k0DIaSSF89gAmvSNylJU-xMacilf_/exec"
+    width="100%"
+    height="600">
+  </iframe>
+</section>
+
+<script>
+  const gradSections = ['2026','2027','2028'];
+
+  function loadAthletes() {
+    gradSections.forEach(grad => {
+      const container = document.getElementById(`profiles-${grad}`);
+      container.innerHTML = '';
+
+      // Fetch data from Apps Script Web App
+      fetch(`https://script.google.com/macros/s/AKfycbzcOi-mDUTXxYfhqWEIsuJbPI4XOYCZNN4F6J3k0DIaSSF89gAmvSNylJU-xMacilf_/exec?mode=view&gradYear=${grad}`)
+        .then(res => res.json())
+        .then(data => {
+          const sportFilter = document.getElementById('sportSelect').value;
+          data.forEach(athlete => {
+            if (sportFilter !== 'all' && athlete.sport.toLowerCase() !== sportFilter.toLowerCase()) return;
+
+            const card = document.createElement('div');
+            card.className = 'athlete-card';
+            card.innerHTML = `
+              <img src="${athlete.photoUrl || 'https://via.placeholder.com/120'}" alt="${athlete.name}">
+              <h3>${athlete.name}</h3>
+              <p>Sport: ${athlete.sport}</p>
+              <p>Grad: ${athlete.gradYear}</p>
+              <p>Pos: ${athlete.pos}</p>
+              <p>Height: ${athlete.ht} | Weight: ${athlete.wt}</p>
+            `;
+            container.appendChild(card);
+          });
+        })
+        .catch(err => console.error('Error loading athletes:', err));
+    });
+  }
+
+  document.getElementById('sportSelect').addEventListener('change', loadAthletes);
+  loadAthletes();
+</script>
+
+</body>
+</html>
