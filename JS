@@ -14,9 +14,10 @@ const firebaseConfig = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
   authDomain: "roo-recruits.firebaseapp.com",
   projectId: "roo-recruits",
-  storageBucket: "roo-recruits.appspot.com",
+  storageBucket: "roo-recruits.firebasestorage.app",
   messagingSenderId: "727330176313",
-  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
+  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8",
+  measurementId: "G-HSW9QKGQ6Q"
 };
 
 // 🚀 Initialize Firebase
