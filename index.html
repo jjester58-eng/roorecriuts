@@ -1,166 +1,67 @@
-/* =============================
-   Global / Body
-============================= */
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #4169E1; /* Royal Blue */
-  color: white;
-  text-align: center;
-  margin: 0;
-  padding: 20px;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weatherford HS Athlete Recruiting Board</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-/* =============================
-   Header / Logo
-============================= */
-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
+<header>
+  <h1>Weatherford High School Athlete Recruiting Board</h1>
+  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif" class="logo" alt="Kangaroo Logo">
+  <p>Multi-sport athlete profiles for college recruiters</p>
+</header>
 
-.logo {
-  max-width: 140px;
-  margin: 10px auto;
-  display: block;
-}
+<section class="controls">
+  <label for="gradSelect"><strong>Class Year:</strong></label>
+  <select id="gradSelect">
+    <option value="2026">2026</option>
+    <option value="2027">2027</option>
+    <option value="2028">2028</option>
+  </select>
 
-/* =============================
-   Navigation
-============================= */
-nav {
-  text-align: center;
-  margin: 20px 0;
-}
+  <label for="sportSelect"><strong>Sport:</strong></label>
+  <select id="sportSelect">
+    <option value="football">Football</option>
+    <option value="track">Track & Field</option>
+    <option value="powerlifting">Powerlifting</option>
+    <option value="baseball">Baseball</option>
+    <option value="basketball">Basketball</option>
+  </select>
 
-nav a {
-  margin: 0 10px;
-  text-decoration: none;
-  color: #fff;
-  font-weight: bold;
-}
+  <button onclick="loadSport()">Load Athletes</button>
+  <button onclick="window.open('https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec?mode=manage','_blank')">
+    Manage Athletes
+  </button>
+</section>
 
-/* =============================
-   Controls
-============================= */
-.controls {
-  text-align: center;
-  margin-bottom: 20px;
-}
+<!-- Athlete Containers -->
+<div id="profiles-2026" class="profiles-grid"></div>
+<div id="profiles-2027" class="profiles-grid"></div>
+<div id="profiles-2028" class="profiles-grid"></div>
 
-select, button {
-  padding: 8px 12px;
-  margin: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 4px;
-  border: none;
-  background: #fff;
-  color: #4169E1;
-  font-weight: bold;
-  transition: transform 0.2s ease;
-}
+<div class="footer">
+  Public recruiting view • Management restricted to staff
+</div>
 
-select:focus, button:focus { outline: none; }
+<!-- Firebase JS -->
+<script type="module" src="firebase.js"></script>
 
-button:hover, select:hover {
-  transform: translateY(-2px);
-}
+<script type="module">
+  import { loadSportBoard } from './firebase.js';
 
-/* =============================
-   Athlete Container Grid
-============================= */
-#athleteContainer {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
-  justify-items: center;
-  margin-top: 20px;
-}
+  function loadSport() {
+    const sport = document.getElementById('sportSelect').value;
+    const grad = document.getElementById('gradSelect').value;
+    const containerId = `profiles-${grad}`;
+    loadSportBoard({ sport, gradYear: grad, containerId });
+  }
 
-/* =============================
-   Player Card
-============================= */
-.player-card {
-  background: #ffffff;
-  color: #000;
-  border-radius: 10px;
-  padding: 16px;
-  max-width: 380px;
-  width: 100%;
-  text-align: left;
-  border: 2px solid #1E40FF;
-  box-shadow: 0 4px 12px rgba(30, 64, 255, 0.25);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+  // Initial load
+  loadSport();
+</script>
 
-.player-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 18px rgba(30, 64, 255, 0.4);
-}
-
-/* =============================
-   Player Photo
-============================= */
-.player-photo {
-  width: 100%;
-  height: 240px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  background: #e5e7eb;
-}
-
-/* =============================
-   Name + Meta
-============================= */
-.player-card h3 {
-  margin: 6px 0 4px;
-  font-size: 1.25em;
-  line-height: 1.3;
-}
-
-.player-card .meta {
-  margin-bottom: 12px;
-  font-size: 0.95em;
-  color: #333;
-}
-
-/* =============================
-   Links (Hudl / Twitter)
-============================= */
-.player-card .links {
-  display: flex;
-  gap: 14px;
-}
-
-.player-card .links a {
-  font-weight: 600;
-  text-decoration: none;
-  color: #1a73e8;
-  transition: color 0.2s ease;
-}
-
-.player-card .links a:hover {
-  color: #0b59c1;
-  text-decoration: underline;
-}
-
-/* =============================
-   Footer
-============================= */
-.footer {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 12px;
-  color: #fff;
-}
-
-/* =============================
-   Responsive
-============================= */
-@media (max-width: 480px) {
-  body { padding: 10px; }
-  .player-card { padding: 14px; }
-  .player-photo { height: 200px; }
-  .player-card .links { flex-direction: column; gap: 6px; }
-}
+</body>
+</html>
