@@ -1,4 +1,4 @@
-// 🔥 Firebase CDN imports
+// 🔥 Firebase CDN imports (ONLY these)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import {
   getFirestore,
@@ -8,22 +8,18 @@ import {
   where,
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
 // 🔑 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
   authDomain: "roo-recruits.firebaseapp.com",
   projectId: "roo-recruits",
-  storageBucket: "roo-recruits.firebasestorage.app",
+  storageBucket: "roo-recruits.appspot.com",
   messagingSenderId: "727330176313",
-  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8",
-  measurementId: "G-HSW9QKGQ6Q"
+  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
-
 // 🚀 Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 // =============================
 // Load Multi-Sport Board
 // =============================
@@ -32,18 +28,8 @@ async function loadSportBoard({
   gradYear = "2026",
   containerId = "profiles-2026"
 }) {
-  const container = document.getElementById(containerId);
-  
-  if (!container) {
-    console.error(`Container #${containerId} not found`);
-    return;
-  }
-
-  // Show loading state
-  container.innerHTML = '<div class="loading">Loading athletes...</div>';
-
   try {
-    // 1️⃣ Load athletes for this grad year
+    // 1️⃣ Load athletes
     const athletesSnap = await getDocs(
       query(
         collection(db, "athletes"),
@@ -51,144 +37,91 @@ async function loadSportBoard({
         orderBy("name")
       )
     );
-    
     const athletes = {};
     athletesSnap.forEach(doc => {
       athletes[doc.id] = doc.data();
     });
-
     // 2️⃣ Load sport-specific data
     const sportSnap = await getDocs(
       query(
         collection(db, "athleteSports"),
-        where("sport", "==", sport.toLowerCase())
+        where("sport", "==", sport)
       )
     );
-
-    // 3️⃣ Merge data - only include athletes that match grad year
+    // 3️⃣ Merge data
     const players = [];
     sportSnap.forEach(doc => {
-      const sportData = doc.data();
-      const athlete = athletes[sportData.athleteId];
-      
-      // Only include if athlete exists and matches grad year
-      if (athlete && athlete.gradYear === gradYear) {
-        players.push({
-          id: doc.id,
-          athleteId: sportData.athleteId,
-          name: athlete.name || "Unnamed",
-          gradYear: athlete.gradYear,
-          photo: athlete.photoUrl || "",
-          email: athlete.email || "",
-          // Sport-specific data
-          sport: sportData.sport || sport,
-          position: sportData.position || "—",
-          height: sportData.height || "—",
-          weight: sportData.weight || "—",
-          jersey: sportData.jersey || "—",
-          gpa: sportData.gpa || "—",
-          hudl: sportData.hudl || "",
-          twitter: sportData.twitter || "",
-          offers: sportData.offers || "",
-          metrics: sportData.metrics || {}
-        });
-      }
+      const d = doc.data();
+      const athlete = athletes[d.athleteId];
+      if (!athlete) return;
+      players.push({
+        name: athlete.name || "Unnamed",
+        gradYear: athlete.gradYear,
+        height: athlete.height || "—",
+        weight: athlete.weight || "—",
+        gpa: athlete.gpa || "—",
+        hudl: athlete.hudl || "",
+        twitter: athlete.twitter || "",
+        photo: athlete.photoUrl || "",
+        position: d.position || "—",
+        jersey: d.jersey || "—",
+        metrics: d.metrics || {}
+      });
     });
-
-    // Sort by name
-    players.sort((a, b) => a.name.localeCompare(b.name));
-
-    // 4️⃣ Render profiles
-    renderProfiles(container, players, sport);
-
+    renderProfiles(containerId, players, sport);
   } catch (err) {
     console.error("Firestore error:", err);
-    container.innerHTML = `<div class="error">Error loading roster: ${err.message}</div>`;
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `<p style="color:red;text-align:center;">Error loading roster</p>`
+    );
   }
 }
-
 // =============================
 // Render Profiles
 // =============================
-function renderProfiles(container, players, sport) {
-  if (players.length === 0) {
-    container.innerHTML = `<div class="loading">No ${sport} athletes found for this class year.</div>`;
-    return;
-  }
-
-  container.innerHTML = "";
-
+function renderProfiles(containerId, players, sport) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = "";
   players.forEach(p => {
     const card = document.createElement("div");
     card.className = "player-card";
-    
     card.innerHTML = `
       <img class="player-photo"
-           src="${p.photo || 'https://via.placeholder.com/300x240/4169E1/ffffff?text=No+Photo'}"
-           alt="${p.name}"
-           onerror="this.src='https://via.placeholder.com/300x240/4169E1/ffffff?text=No+Photo'" />
-      <h3>
-        ${p.name}
-        <span class="jersey">#${p.jersey}</span>
-      </h3>
+           src="${p.photo || "https://via.placeholder.com/300"}"
+           alt="${p.name}" />
+      <h3>${p.name} <span class="jersey">#${p.jersey}</span></h3>
       <p class="meta">
-        <strong>${capitalizeFirst(p.sport)}</strong> • ${p.position}<br>
+        ${sport.toUpperCase()} • ${p.position}<br>
         ${p.height} • ${p.weight} lbs • GPA ${p.gpa}
       </p>
-      ${p.offers ? `<p class="meta" style="margin-top: 8px;"><strong>Offers:</strong> ${p.offers}</p>` : ''}
       ${renderMetrics(p.metrics)}
-      ${(p.hudl || p.twitter) ? `
-        <div class="links">
-          ${p.hudl ? `<a href="${p.hudl}" target="_blank" rel="noopener">🎥 Hudl</a>` : ""}
-          ${p.twitter ? `<a href="${p.twitter}" target="_blank" rel="noopener">🐦 Twitter/X</a>` : ""}
-        </div>
-      ` : ''}
+      <div class="links">
+        ${p.hudl ? `<a href="${p.hudl}" target="_blank">🎥 Hudl</a>` : ""}
+        ${p.twitter ? `<a href="${p.twitter}" target="_blank">🐦 Twitter/X</a>` : ""}
+      </div>
     `;
-    
-    container.appendChild(card);
+    el.appendChild(card);
   });
 }
-
 // =============================
 // Sport Metrics Renderer
 // =============================
 function renderMetrics(metrics) {
-  if (!metrics || typeof metrics !== 'object') return "";
-  
   const keys = Object.keys(metrics);
   if (!keys.length) return "";
-  
   return `
     <ul class="metrics">
-      ${keys.map(k => `<li><strong>${capitalizeFirst(k)}:</strong> ${metrics[k]}</li>`).join("")}
+      ${keys.map(k => `<li><strong>${k}:</strong> ${metrics[k]}</li>`).join("")}
     </ul>
   `;
 }
-
-// =============================
-// Utility: Capitalize First Letter
-// =============================
-function capitalizeFirst(str) {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-// =============================
-// Make functions available globally
-// =============================
-window.loadSportBoard = loadSportBoard;
-
 // =============================
 // ▶️ Initial Load
 // =============================
-// Auto-load if there's a default container
-if (document.getElementById("profiles-2026")) {
-  loadSportBoard({
-    sport: "football",
-    gradYear: "2026",
-    containerId: "profiles-2026"
-  });
-}
-
-// Export for use in other scripts
-export { loadSportBoard, renderProfiles };
+loadSportBoard({
+  sport: "football",
+  gradYear: "2026",
+  containerId: "profiles-2026"
+}); 
