@@ -4,7 +4,217 @@
   <meta charset="UTF-8">
   <title>Weatherford HS Athlete Recruiting Board</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    header img {
+      width: 120px;
+      height: auto;
+      margin: 15px 0;
+      border-radius: 10px;
+      background: white;
+      padding: 10px;
+    }
+
+    header p {
+      font-size: 1.2rem;
+      opacity: 0.95;
+    }
+
+    .controls {
+      max-width: 1200px;
+      margin: 0 auto 30px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .controls label {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .controls select {
+      padding: 10px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    .controls select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .controls button:first-of-type {
+      background: #667eea;
+      color: white;
+    }
+
+    .controls button:first-of-type:hover {
+      background: #5568d3;
+    }
+
+    .controls button:last-of-type {
+      background: #4caf50;
+      color: white;
+    }
+
+    .controls button:last-of-type:hover {
+      background: #45a049;
+    }
+
+    .profile-grid {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    .player-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .player-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+
+    .player-photo {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      background: #f0f0f0;
+    }
+
+    .player-card h3 {
+      padding: 15px 20px 5px;
+      color: #667eea;
+      font-size: 1.3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .jersey {
+      background: #764ba2;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .meta {
+      padding: 5px 20px 15px;
+      color: #666;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .links {
+      padding: 15px 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .links a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+    }
+
+    .links a:hover {
+      color: #5568d3;
+      text-decoration: underline;
+    }
+
+    .loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: white;
+      font-size: 1.2rem;
+      padding: 40px;
+    }
+
+    .error {
+      grid-column: 1 / -1;
+      background: #f44336;
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8rem;
+      }
+
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .controls select,
+      .controls button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -17,6 +227,7 @@
 <section class="controls">
   <label for="gradSelect"><strong>Class Year:</strong></label>
   <select id="gradSelect">
+    <option value="2025">2025</option>
     <option value="2026">2026</option>
     <option value="2027">2027</option>
     <option value="2028">2028</option>
@@ -24,16 +235,18 @@
 
   <label for="sportSelect"><strong>Sport:</strong></label>
   <select id="sportSelect">
-    <option value="all">All</option>
+    <option value="all">All Sports</option>
     <option value="football">Football</option>
     <option value="track">Track & Field</option>
     <option value="powerlifting">Powerlifting</option>
     <option value="baseball">Baseball</option>
     <option value="basketball">Basketball</option>
+    <option value="volleyball">Volleyball</option>
+    <option value="soccer">Soccer</option>
   </select>
 
   <button onclick="loadBoard()">Load Athletes</button>
-  <button onclick="window.open('https://script.google.com/macros/s/YOUR_APPS_SCRIPT_ID/exec?mode=manage','_blank')">
+  <button onclick="window.open('https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec','_blank')">
     Manage Athletes
   </button>
 </section>
@@ -57,53 +270,104 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function loadBoard() {
+window.loadBoard = async function() {
   const gradYear = document.getElementById("gradSelect").value;
   const sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
 
-  container.innerHTML = "<p style='grid-column:1/-1;color:white;'>Loading...</p>";
+  container.innerHTML = "<p class='loading'>Loading athletes...</p>";
 
   try {
-    const athletesSnap = await getDocs(query(collection(db,"athletes"), where("gradYear","==",gradYear), orderBy("name")));
+    // Get all athletes for this grad year
+    const athletesSnap = await getDocs(
+      query(
+        collection(db, "athletes"), 
+        where("gradYear", "==", gradYear), 
+        orderBy("name")
+      )
+    );
+    
     const athletes = {};
-    athletesSnap.forEach(doc => athletes[doc.id] = doc.data());
+    athletesSnap.forEach(doc => {
+      athletes[doc.id] = doc.data();
+    });
 
-    const sportSnap = await getDocs(query(collection(db,"athleteSports"), sport==="all"?collection(db,"athleteSports"):query(collection(db,"athleteSports"), where("sport","==",sport))));
+    // Get sport-specific data
+    let sportQuery;
+    if (sport === "all") {
+      sportQuery = collection(db, "athleteSports");
+    } else {
+      sportQuery = query(
+        collection(db, "athleteSports"), 
+        where("sport", "==", sport)
+      );
+    }
+    
+    const sportSnap = await getDocs(sportQuery);
 
     const players = [];
     sportSnap.forEach(doc => {
-      const d = doc.data();
-      const athlete = athletes[d.athleteId];
-      if (!athlete) return;
-      players.push({...athlete, ...d});
+      const sportData = doc.data();
+      const athlete = athletes[sportData.athleteId];
+      
+      // Only include if athlete exists and matches grad year
+      if (athlete && athlete.gradYear === gradYear) {
+        players.push({
+          ...athlete,
+          ...sportData,
+          id: doc.id
+        });
+      }
     });
+
+    // Sort by name
+    players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    // Display results
+    if (players.length === 0) {
+      container.innerHTML = "<p class='loading'>No athletes found for this selection.</p>";
+      return;
+    }
 
     container.innerHTML = "";
     players.forEach(p => {
       const card = document.createElement("div");
       card.className = "player-card";
+      
       card.innerHTML = `
-        <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300'}" alt="${p.name}">
-        <h3>${p.name} <span class="jersey">#${p.jersey || "—"}</span></h3>
-        <p class="meta">${p.sport} • ${p.position || "—"}<br>
-        ${p.height || "—"} • ${p.weight || "—"} lbs • GPA ${p.gpa || "—"}</p>
-        <div class="links">
-          ${p.hudl ? `<a href="${p.hudl}" target="_blank">🎥 Hudl</a>` : ""}
-          ${p.twitter ? `<a href="${p.twitter}" target="_blank">🐦 Twitter/X</a>` : ""}
-        </div>
+        <img class="player-photo" 
+             src="${p.photoUrl || 'https://via.placeholder.com/300x250/667eea/ffffff?text=No+Photo'}" 
+             alt="${p.name || 'Athlete'}"
+             onerror="this.src='https://via.placeholder.com/300x250/667eea/ffffff?text=No+Photo'">
+        <h3>
+          ${p.name || 'Unknown'} 
+          <span class="jersey">#${p.jersey || "—"}</span>
+        </h3>
+        <p class="meta">
+          <strong>${p.sport || 'Sport N/A'}</strong> • ${p.position || "Position N/A"}<br>
+          ${p.height || "—"} • ${p.weight || "—"} lbs • GPA ${p.gpa || "—"}
+        </p>
+        ${p.hudl || p.twitter ? `
+          <div class="links">
+            ${p.hudl ? `<a href="${p.hudl}" target="_blank" rel="noopener">🎥 Hudl</a>` : ""}
+            ${p.twitter ? `<a href="${p.twitter}" target="_blank" rel="noopener">🐦 Twitter/X</a>` : ""}
+          </div>
+        ` : ''}
       `;
+      
       container.appendChild(card);
     });
 
   } catch (err) {
-    console.error(err);
-    container.innerHTML = "<p style='grid-column:1/-1;color:red;'>Error loading athletes.</p>";
+    console.error('Error loading athletes:', err);
+    container.innerHTML = `<p class="error">Error loading athletes: ${err.message}</p>`;
   }
 }
 
 // Initial load
 loadBoard();
+
+// Add event listeners
 document.getElementById("gradSelect").addEventListener("change", loadBoard);
 document.getElementById("sportSelect").addEventListener("change", loadBoard);
 </script>
