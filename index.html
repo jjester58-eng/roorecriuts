@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Weatherford HS Athlete Recruiting Board</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header>
   <h1>Weatherford High School Athlete Recruiting Board</h1>
-  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif" class="logo" alt="Kangaroo Logo">
+  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif" alt="Kangaroo Logo">
   <p>Multi-sport athlete profiles for college recruiters</p>
 </header>
 
@@ -24,6 +24,7 @@
 
   <label for="sportSelect"><strong>Sport:</strong></label>
   <select id="sportSelect">
+    <option value="all">All</option>
     <option value="football">Football</option>
     <option value="track">Track & Field</option>
     <option value="powerlifting">Powerlifting</option>
@@ -31,36 +32,80 @@
     <option value="basketball">Basketball</option>
   </select>
 
-  <button onclick="loadSport()">Load Athletes</button>
-  <button onclick="window.open('https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec?mode=manage','_blank')">
+  <button onclick="loadBoard()">Load Athletes</button>
+  <button onclick="window.open('https://script.google.com/macros/s/YOUR_APPS_SCRIPT_ID/exec?mode=manage','_blank')">
     Manage Athletes
   </button>
 </section>
 
-<!-- Athlete Containers -->
-<div id="profiles-2026" class="profiles-grid"></div>
-<div id="profiles-2027" class="profiles-grid"></div>
-<div id="profiles-2028" class="profiles-grid"></div>
-
-<div class="footer">
-  Public recruiting view • Management restricted to staff
-</div>
-
-<!-- Firebase JS -->
-<script type="module" src="firebase.js"></script>
+<div id="athleteContainer" class="profile-grid"></div>
 
 <script type="module">
-  import { loadSportBoard } from './firebase.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  function loadSport() {
-    const sport = document.getElementById('sportSelect').value;
-    const grad = document.getElementById('gradSelect').value;
-    const containerId = `profiles-${grad}`;
-    loadSportBoard({ sport, gradYear: grad, containerId });
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
+  authDomain: "roo-recruits.firebaseapp.com",
+  projectId: "roo-recruits",
+  storageBucket: "roo-recruits.appspot.com",
+  messagingSenderId: "727330176313",
+  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadBoard() {
+  const gradYear = document.getElementById("gradSelect").value;
+  const sport = document.getElementById("sportSelect").value;
+  const container = document.getElementById("athleteContainer");
+
+  container.innerHTML = "<p style='grid-column:1/-1;color:white;'>Loading...</p>";
+
+  try {
+    const athletesSnap = await getDocs(query(collection(db,"athletes"), where("gradYear","==",gradYear), orderBy("name")));
+    const athletes = {};
+    athletesSnap.forEach(doc => athletes[doc.id] = doc.data());
+
+    const sportSnap = await getDocs(query(collection(db,"athleteSports"), sport==="all"?collection(db,"athleteSports"):query(collection(db,"athleteSports"), where("sport","==",sport))));
+
+    const players = [];
+    sportSnap.forEach(doc => {
+      const d = doc.data();
+      const athlete = athletes[d.athleteId];
+      if (!athlete) return;
+      players.push({...athlete, ...d});
+    });
+
+    container.innerHTML = "";
+    players.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "player-card";
+      card.innerHTML = `
+        <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300'}" alt="${p.name}">
+        <h3>${p.name} <span class="jersey">#${p.jersey || "—"}</span></h3>
+        <p class="meta">${p.sport} • ${p.position || "—"}<br>
+        ${p.height || "—"} • ${p.weight || "—"} lbs • GPA ${p.gpa || "—"}</p>
+        <div class="links">
+          ${p.hudl ? `<a href="${p.hudl}" target="_blank">🎥 Hudl</a>` : ""}
+          ${p.twitter ? `<a href="${p.twitter}" target="_blank">🐦 Twitter/X</a>` : ""}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = "<p style='grid-column:1/-1;color:red;'>Error loading athletes.</p>";
   }
+}
 
-  // Initial load
-  loadSport();
+// Initial load
+loadBoard();
+document.getElementById("gradSelect").addEventListener("change", loadBoard);
+document.getElementById("sportSelect").addEventListener("change", loadBoard);
 </script>
 
 </body>
