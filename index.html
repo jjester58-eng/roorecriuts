@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Weatherford HS Athlete Recruiting Board</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; margin:20px; }
+    body { font-family: Arial, sans-serif; margin:20px; background:#f7f7f7; }
     header { text-align:center; margin-bottom:30px; }
     .logo { max-width:140px; margin:10px auto; display:block; }
     nav { text-align:center; margin:20px 0; }
     nav a { margin:0 10px; text-decoration:none; color:#0033a0; font-weight:bold; }
-    section { margin-bottom:40px; }
     .controls { text-align:center; margin-bottom:20px; }
+    select, button { padding:8px 12px; margin:5px; cursor:pointer; font-size:14px; }
     .athlete-card { 
       display:inline-block; 
       width:200px; 
@@ -19,32 +20,30 @@
       border:1px solid #ccc; 
       border-radius:5px; 
       text-align:center; 
-      background:#f9f9f9; 
+      background:#fff; 
     }
     .athlete-card img { width:120px; height:auto; border-radius:5px; margin-bottom:10px; }
-    #rooRecruitsApp { text-align:center; }
-    #rooRecruitsApp button { 
-      padding:10px 20px; 
-      background:#0033a0; 
-      color:white; 
-      border:none; 
-      border-radius:5px; 
-      cursor:pointer; 
-      font-size:16px;
-    }
-    #rooRecruitsApp iframe { border:1px solid #ccc; border-radius:5px; margin-top:15px; }
+    .footer { text-align:center; margin-top:20px; font-size:12px; color:#555; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Weatherford High School Athlete Recruiting Board</h1>
+  <h1>Weatherford HS Athlete Recruiting Board</h1>
   <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif" class="logo" alt="Kangaroo Logo">
   <p>Multi-sport athlete profiles for college recruiters</p>
 </header>
 
 <section class="controls">
-  <label for="sportSelect"><strong>Select Sport:</strong></label>
+  <label for="gradSelect"><strong>Class Year:</strong></label>
+  <select id="gradSelect">
+    <option value="all">All</option>
+    <option value="2026">2026</option>
+    <option value="2027">2027</option>
+    <option value="2028">2028</option>
+  </select>
+
+  <label for="sportSelect"><strong>Sport:</strong></label>
   <select id="sportSelect">
     <option value="all">All</option>
     <option value="football">Football</option>
@@ -53,29 +52,6 @@
     <option value="baseball">Baseball</option>
     <option value="basketball">Basketball</option>
   </select>
-</section>
-
-<nav>
-  <a href="#2026">Class of 2026</a> |
-  <a href="#2027">Class of 2027</a> |
-  <a href="#2028">Class of 2028</a>
-</nav>
-
-<section id="2026">
-  <h2>Class of 2026</h2>
-  <div id="profiles-2026" data-grad="2026"></div>
-</section>
-
-<section id="2027">
-  <h2>Class of 2027</h2>
-  <div id="profiles-2027" data-grad="2027"></div>
-</section>
-
-<section id="2028">
-  <h2>Class of 2028</h2>
-  <div id="profiles-2028" data-grad="2028"></div>
-</section>
-
 
   <button onclick="loadAthletes()">Load Athletes</button>
   <button onclick="window.open('https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec?mode=manage', '_blank')">
@@ -83,41 +59,68 @@
   </button>
 </section>
 
+<div id="athleteContainer" style="text-align:center;"></div>
+
+<div class="footer">
+  Public recruiting view • Management restricted to staff
+</div>
+
 <script>
-  const gradSections = ['2026','2027','2028'];
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec";
 
-  function loadAthletes() {
-    gradSections.forEach(grad => {
-      const container = document.getElementById(`profiles-${grad}`);
-      container.innerHTML = '';
+function escapeHtml(text) {
+  if (!text) return "";
+  return text.replace(/[&<>"']/g, m =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])
+  );
+}
 
-      // Fetch data from Apps Script Web App
-      fetch(`https://script.google.com/macros/s/AKfycbzcOi-mDUTXxYfhqWEIsuJbPI4XOYCZNN4F6J3k0DIaSSF89gAmvSNylJU-xMacilf_/exec?mode=view&gradYear=${grad}`)
-        .then(res => res.json())
-        .then(data => {
-          const sportFilter = document.getElementById('sportSelect').value;
-          data.forEach(athlete => {
-            if (sportFilter !== 'all' && athlete.sport.toLowerCase() !== sportFilter.toLowerCase()) return;
+async function loadAthletes() {
+  const grad = document.getElementById('gradSelect').value;
+  const sportFilter = document.getElementById('sportSelect').value;
+  const container = document.getElementById('athleteContainer');
 
-            const card = document.createElement('div');
-            card.className = 'athlete-card';
-            card.innerHTML = `
-              <img src="${athlete.photoUrl || 'https://via.placeholder.com/120'}" alt="${athlete.name}">
-              <h3>${athlete.name}</h3>
-              <p>Sport: ${athlete.sport}</p>
-              <p>Grad: ${athlete.gradYear}</p>
-              <p>Pos: ${athlete.pos}</p>
-              <p>Height: ${athlete.ht} | Weight: ${athlete.wt}</p>
-            `;
-            container.appendChild(card);
-          });
-        })
-        .catch(err => console.error('Error loading athletes:', err));
+  container.innerHTML = "<p>Loading athletes...</p>";
+
+  try {
+    const url = `${WEB_APP_URL}?mode=view${grad !== 'all' ? '&gradYear='+grad : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      container.innerHTML = "<p>No athletes found.</p>";
+      return;
+    }
+
+    container.innerHTML = "";
+
+    data.forEach(athlete => {
+      if (sportFilter !== 'all' && athlete.sport.toLowerCase() !== sportFilter.toLowerCase()) return;
+
+      const card = document.createElement('div');
+      card.className = "athlete-card";
+      card.innerHTML = `
+        <img src="${athlete.photoUrl || 'https://via.placeholder.com/120'}" alt="${escapeHtml(athlete.name)}">
+        <h3>${escapeHtml(athlete.name)}</h3>
+        <p>Sport: ${escapeHtml(athlete.sport)}</p>
+        <p>Grad: ${escapeHtml(athlete.gradYear)}</p>
+        <p>Pos: ${escapeHtml(athlete.pos)}</p>
+        <p>Height: ${escapeHtml(athlete.ht)} | Weight: ${escapeHtml(athlete.wt)}</p>
+      `;
+      container.appendChild(card);
     });
-  }
 
-  document.getElementById('sportSelect').addEventListener('change', loadAthletes);
-  loadAthletes();
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = "<p>Error loading athletes.</p>";
+  }
+}
+
+document.getElementById('gradSelect').addEventListener('change', loadAthletes);
+document.getElementById('sportSelect').addEventListener('change', loadAthletes);
+
+// Initial load
+loadAthletes();
 </script>
 
 </body>
