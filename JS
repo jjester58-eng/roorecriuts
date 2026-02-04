@@ -19,8 +19,11 @@ const firebaseConfig = {
   appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
 
+// Initialize Firebase once
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// Use second database explicitly
+const db = getFirestore(app, "roorecruits2"); // <--- points to your second DB
 
 // Main load function – called on change + initial page load
 async function loadBoard() {
