@@ -23,9 +23,36 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Use second database explicitly
-const db = getFirestore(app, "roorecruits2"); // <--- points to your second DB
+const db = getFirestore(app, "roorecruits2"); // ← correct DB
 
-// Main load function – called on change + initial page load
+/* --------------------------------------------------
+   Populate Grad Year Dropdown from Firestore
+-------------------------------------------------- */
+async function loadGradYears() {
+  const gradSelect = document.getElementById("gradSelect");
+  gradSelect.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "athletes"));
+  const years = new Set();
+
+  snap.forEach(doc => {
+    const y = doc.data().gradYear;
+    if (y) years.add(String(y));
+  });
+
+  [...years]
+    .sort()
+    .forEach(year => {
+      const opt = document.createElement("option");
+      opt.value = year;
+      opt.textContent = `Class of ${year}`;
+      gradSelect.appendChild(opt);
+    });
+}
+
+/* --------------------------------------------------
+   Main Board Loader
+-------------------------------------------------- */
 async function loadBoard() {
   const gradYear = document.getElementById("gradSelect").value;
   const sport = document.getElementById("sportSelect").value;
@@ -34,17 +61,20 @@ async function loadBoard() {
   container.innerHTML = `<div class="loading">Loading athletes for class of ${gradYear}...</div>`;
 
   try {
-    // 1. Athletes for grad year
+    // 1. Load athletes for selected grad year
     const athletesQ = query(
       collection(db, "athletes"),
       where("gradYear", "==", gradYear),
       orderBy("name")
     );
+
     const athletesSnap = await getDocs(athletesQ);
     const athletes = {};
-    athletesSnap.forEach(doc => { athletes[doc.id] = doc.data(); });
+    athletesSnap.forEach(doc => {
+      athletes[doc.id] = doc.data();
+    });
 
-    // 2. Sport data
+    // 2. Load sport data
     let sportQ;
     if (sport === "all") {
       sportQ = query(collection(db, "athleteSports"));
@@ -54,13 +84,15 @@ async function loadBoard() {
         where("sport", "==", sport)
       );
     }
+
     const sportSnap = await getDocs(sportQ);
 
     const players = [];
     sportSnap.forEach(doc => {
       const sportData = doc.data();
       const athlete = athletes[sportData.athleteId];
-      if (athlete && athlete.gradYear === gradYear) {
+
+      if (athlete) {
         players.push({
           ...athlete,
           ...sportData,
@@ -70,15 +102,17 @@ async function loadBoard() {
       }
     });
 
-    // Sort by name
     players.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
-    // Render
     if (players.length === 0) {
-      container.innerHTML = `<div class="loading">No athletes found for ${gradYear} – ${sport === "all" ? "any sport" : sport}.</div>`;
+      container.innerHTML = `
+        <div class="loading">
+          No athletes found for ${gradYear} – ${sport === "all" ? "any sport" : sport}.
+        </div>`;
       return;
     }
 
+    // Render cards
     container.innerHTML = "";
     players.forEach(p => {
       const card = document.createElement("div");
@@ -86,7 +120,7 @@ async function loadBoard() {
 
       card.innerHTML = `
         <img class="player-photo"
-             src="${p.photoUrl || 'https://via.placeholder.com/340x240/667eea/ffffff?text=No+Photo'}"
+             src="${p.photoUrl || "https://via.placeholder.com/340x240/667eea/ffffff?text=No+Photo"}"
              alt="${p.fullName}"
              loading="lazy"
              onerror="this.src='https://via.placeholder.com/340x240/667eea/ffffff?text=No+Photo'" />
@@ -111,23 +145,27 @@ async function loadBoard() {
 
       container.appendChild(card);
     });
+
   } catch (err) {
     console.error("Firestore error:", err);
     container.innerHTML = `
       <div class="error">
         Error loading athletes: ${err.message || "Check console"}<br>
         <small>(Verify Firestore security rules allow public reads)</small>
-      </div>
-    `;
+      </div>`;
   }
 }
 
-// Expose to window for button onclick
+/* --------------------------------------------------
+   Wire Up
+-------------------------------------------------- */
 window.loadBoard = loadBoard;
 
-// Event listeners
 document.getElementById("gradSelect").addEventListener("change", loadBoard);
 document.getElementById("sportSelect").addEventListener("change", loadBoard);
 
-// Initial load (defaults to 2026 Football)
+/* --------------------------------------------------
+   Initial Boot
+-------------------------------------------------- */
+await loadGradYears();
 loadBoard();
