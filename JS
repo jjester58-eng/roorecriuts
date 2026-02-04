@@ -12,9 +12,9 @@ import {
 // Firebase Config (public read-only is fine)
 const firebaseConfig = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
-  authDomain: "roo-recruits2.firebaseapp.com",
-  projectId: "roo-recruits2",
-  storageBucket: "roo-recruits2.appspot.com",
+  authDomain: "roo-recruits.firebaseapp.com",
+  projectId: "roo-recruits",
+  storageBucket: "roo-recruits.firebasestorage.app",
   messagingSenderId: "727330176313",
   appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
