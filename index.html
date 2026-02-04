@@ -254,21 +254,21 @@
 <div id="athleteContainer" class="profile-grid"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// Firebase config
+// Firebase config - UPDATED to match app.js
 const firebaseConfig = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
-  authDomain: "roo-recruits.firebaseapp.com",
-  projectId: "roo-recruits",
-  storageBucket: "roo-recruits.appspot.com",
+  authDomain: "roo-recruits2.firebaseapp.com",
+  projectId: "roo-recruits2",
+  storageBucket: "roo-recruits2.appspot.com",
   messagingSenderId: "727330176313",
   appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getFirestore(app, "roorecruits2"); // Point to second database
 
 window.loadBoard = async function() {
   const gradYear = document.getElementById("gradSelect").value;
