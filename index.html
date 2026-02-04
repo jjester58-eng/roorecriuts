@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Weatherford HS Athlete Recruiting Board</title>
+  <title>Weatherford HS Athlete Recruiting Board (DEBUG)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * {
@@ -42,6 +42,23 @@
     header p {
       font-size: 1.2rem;
       opacity: 0.95;
+    }
+
+    .debug-panel {
+      max-width: 1200px;
+      margin: 0 auto 20px;
+      background: rgba(0,0,0,0.7);
+      color: #0f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .debug-panel div {
+      margin-bottom: 5px;
     }
 
     .controls {
@@ -95,13 +112,22 @@
       background: #5568d3;
     }
 
-    .controls button:last-of-type {
+    .controls button:nth-of-type(2) {
       background: #4caf50;
       color: white;
     }
 
-    .controls button:last-of-type:hover {
+    .controls button:nth-of-type(2):hover {
       background: #45a049;
+    }
+
+    .controls button:last-of-type {
+      background: #ff9800;
+      color: white;
+    }
+
+    .controls button:last-of-type:hover {
+      background: #e68900;
     }
 
     .profile-grid {
@@ -224,11 +250,16 @@
   <p>Multi-sport athlete profiles for college recruiters</p>
 </header>
 
+<div id="debugPanel" class="debug-panel">
+  <div><strong>🔍 DEBUG CONSOLE</strong></div>
+  <div>Initializing...</div>
+</div>
+
 <section class="controls">
   <label for="gradSelect"><strong>Class Year:</strong></label>
   <select id="gradSelect">
     <option value="2025">2025</option>
-    <option value="2026">2026</option>
+    <option value="2026" selected>2026</option>
     <option value="2027">2027</option>
     <option value="2028">2028</option>
   </select>
@@ -249,6 +280,7 @@
   <button onclick="window.open('https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec','_blank')">
     Manage Athletes
   </button>
+  <button onclick="testAllCollections()">🔍 Test All Collections</button>
 </section>
 
 <div id="athleteContainer" class="profile-grid"></div>
@@ -257,7 +289,18 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// Firebase config - UPDATED to match app.js
+// Debug logging helper
+const debugLog = (message, data = null) => {
+  const panel = document.getElementById('debugPanel');
+  const div = document.createElement('div');
+  const timestamp = new Date().toLocaleTimeString();
+  div.innerHTML = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}`;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+  console.log(message, data);
+};
+
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
   authDomain: "roo-recruits2.firebaseapp.com",
@@ -267,68 +310,153 @@ const firebaseConfig = {
   appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
 
+debugLog('Initializing Firebase with config', { projectId: firebaseConfig.projectId });
+
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, "roorecruits2"); // Point to second database
+
+// Try WITHOUT specifying the database name first
+let db;
+try {
+  db = getFirestore(app);
+  debugLog('✅ Connected to default Firestore database');
+} catch (err) {
+  debugLog('❌ Error connecting to Firestore', err.message);
+}
+
+// Test function to check all collections
+window.testAllCollections = async function() {
+  debugLog('🔍 Testing all possible database configurations...');
+  
+  // Test 1: Default database
+  try {
+    debugLog('Testing default database...');
+    const testDb = getFirestore(app);
+    
+    // Try to list all collections (won't work, but we can try specific ones)
+    const collectionsToTest = ['athletes', 'athleteSports', 'Athletes', 'AthleteSports'];
+    
+    for (const collName of collectionsToTest) {
+      try {
+        const snap = await getDocs(collection(testDb, collName));
+        debugLog(`✅ Collection '${collName}' - Found ${snap.size} documents`);
+        if (snap.size > 0) {
+          snap.forEach(doc => {
+            debugLog(`  Document ID: ${doc.id}`, doc.data());
+          });
+        }
+      } catch (err) {
+        debugLog(`❌ Collection '${collName}' - Error: ${err.message}`);
+      }
+    }
+  } catch (err) {
+    debugLog('❌ Default database error', err.message);
+  }
+  
+  // Test 2: Named database
+  try {
+    debugLog('Testing named database "roorecruits2"...');
+    const testDb2 = getFirestore(app, "roorecruits2");
+    
+    const collectionsToTest = ['athletes', 'athleteSports', 'Athletes', 'AthleteSports'];
+    
+    for (const collName of collectionsToTest) {
+      try {
+        const snap = await getDocs(collection(testDb2, collName));
+        debugLog(`✅ Collection '${collName}' in roorecruits2 - Found ${snap.size} documents`);
+        if (snap.size > 0) {
+          snap.forEach(doc => {
+            debugLog(`  Document ID: ${doc.id}`, doc.data());
+          });
+        }
+      } catch (err) {
+        debugLog(`❌ Collection '${collName}' in roorecruits2 - Error: ${err.message}`);
+      }
+    }
+  } catch (err) {
+    debugLog('❌ Named database error', err.message);
+  }
+};
 
 window.loadBoard = async function() {
   const gradYear = document.getElementById("gradSelect").value;
   const sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
 
+  debugLog(`🏀 Loading board for: Class ${gradYear}, Sport: ${sport}`);
   container.innerHTML = "<p class='loading'>Loading athletes...</p>";
 
   try {
-    // Get all athletes for this grad year
-    const athletesSnap = await getDocs(
-      query(
-        collection(db, "athletes"), 
-        where("gradYear", "==", gradYear), 
-        orderBy("name")
-      )
+    // Step 1: Try to get athletes
+    debugLog(`📋 Querying athletes collection with gradYear=${gradYear}`);
+    
+    const athletesRef = collection(db, "athletes");
+    debugLog('Athletes collection reference created');
+    
+    const athletesQuery = query(
+      athletesRef,
+      where("gradYear", "==", gradYear),
+      orderBy("name")
     );
+    debugLog('Athletes query created with where and orderBy');
+    
+    const athletesSnap = await getDocs(athletesQuery);
+    debugLog(`✅ Athletes query returned ${athletesSnap.size} documents`);
     
     const athletes = {};
     athletesSnap.forEach(doc => {
       athletes[doc.id] = doc.data();
+      debugLog(`  Athlete: ${doc.id}`, doc.data());
     });
 
-    // Get sport-specific data
+    // Step 2: Get sport-specific data
+    debugLog(`⚽ Querying athleteSports collection with sport=${sport}`);
+    
     let sportQuery;
     if (sport === "all") {
       sportQuery = collection(db, "athleteSports");
+      debugLog('Getting ALL sports');
     } else {
       sportQuery = query(
         collection(db, "athleteSports"), 
         where("sport", "==", sport)
       );
+      debugLog(`Filtering for sport: ${sport}`);
     }
     
     const sportSnap = await getDocs(sportQuery);
+    debugLog(`✅ Sport query returned ${sportSnap.size} documents`);
 
     const players = [];
     sportSnap.forEach(doc => {
       const sportData = doc.data();
+      debugLog(`  Sport doc: ${doc.id}`, sportData);
+      
       const athlete = athletes[sportData.athleteId];
       
-      // Only include if athlete exists and matches grad year
       if (athlete && athlete.gradYear === gradYear) {
+        debugLog(`  ✅ Matched athlete: ${sportData.athleteId}`);
         players.push({
           ...athlete,
           ...sportData,
           id: doc.id
         });
+      } else {
+        debugLog(`  ❌ No match for athleteId: ${sportData.athleteId} (athlete exists: ${!!athlete}, gradYear match: ${athlete?.gradYear === gradYear})`);
       }
     });
 
     // Sort by name
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    debugLog(`📊 Final player count: ${players.length}`);
 
     // Display results
     if (players.length === 0) {
       container.innerHTML = "<p class='loading'>No athletes found for this selection.</p>";
+      debugLog('❌ No players to display');
       return;
     }
 
+    debugLog(`🎨 Rendering ${players.length} player cards`);
     container.innerHTML = "";
     players.forEach(p => {
       const card = document.createElement("div");
@@ -359,17 +487,25 @@ window.loadBoard = async function() {
     });
 
   } catch (err) {
-    console.error('Error loading athletes:', err);
-    container.innerHTML = `<p class="error">Error loading athletes: ${err.message}</p>`;
+    debugLog('❌ ERROR in loadBoard', err);
+    console.error('Full error:', err);
+    container.innerHTML = `<p class="error">Error loading athletes: ${err.message}<br><small>Check the debug panel above for details</small></p>`;
   }
 }
 
 // Initial load
+debugLog('🚀 Page loaded, starting initial load');
 loadBoard();
 
 // Add event listeners
-document.getElementById("gradSelect").addEventListener("change", loadBoard);
-document.getElementById("sportSelect").addEventListener("change", loadBoard);
+document.getElementById("gradSelect").addEventListener("change", () => {
+  debugLog('Grad year changed');
+  loadBoard();
+});
+document.getElementById("sportSelect").addEventListener("change", () => {
+  debugLog('Sport changed');
+  loadBoard();
+});
 </script>
 
 </body>
