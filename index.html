@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Weatherford HS Athlete Recruiting Board (DEBUG)</title>
+  <title>Weatherford HS Athlete Recruiting Board</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- STYLES: unchanged -->
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -18,48 +16,10 @@
       padding: 20px;
     }
 
-    header {
-      text-align: center;
-      color: white;
-      margin-bottom: 40px;
-    }
-
-    header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 15px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-
-    header img {
-      width: 120px;
-      height: auto;
-      margin: 15px 0;
-      border-radius: 10px;
-      background: white;
-      padding: 10px;
-    }
-
-    header p {
-      font-size: 1.2rem;
-      opacity: 0.95;
-    }
-
-    .debug-panel {
-      max-width: 1200px;
-      margin: 0 auto 20px;
-      background: rgba(0,0,0,0.7);
-      color: #0f0;
-      padding: 15px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 12px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .debug-panel div {
-      margin-bottom: 5px;
-    }
+    header { text-align: center; color: white; margin-bottom: 40px; }
+    header h1 { font-size: 2.5rem; margin-bottom: 15px; }
+    header img { width: 120px; background: white; padding: 10px; border-radius: 10px; }
+    header p { font-size: 1.2rem; }
 
     .controls {
       max-width: 1200px;
@@ -67,68 +27,26 @@
       background: white;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
       align-items: center;
     }
 
-    .controls label {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .controls select {
+    .controls select, .controls button {
       padding: 10px 15px;
-      border: 2px solid #e0e0e0;
-      border-radius: 6px;
       font-size: 16px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: border-color 0.3s;
-    }
-
-    .controls select:focus {
-      outline: none;
-      border-color: #667eea;
     }
 
     .controls button {
-      padding: 10px 20px;
       border: none;
-      border-radius: 6px;
-      font-size: 16px;
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
     }
 
-    .controls button:first-of-type {
-      background: #667eea;
-      color: white;
-    }
-
-    .controls button:first-of-type:hover {
-      background: #5568d3;
-    }
-
-    .controls button:nth-of-type(2) {
-      background: #4caf50;
-      color: white;
-    }
-
-    .controls button:nth-of-type(2):hover {
-      background: #45a049;
-    }
-
-    .controls button:last-of-type {
-      background: #ff9800;
-      color: white;
-    }
-
-    .controls button:last-of-type:hover {
-      background: #e68900;
-    }
+    .controls button:first-of-type { background: #667eea; color: white; }
+    .controls button:nth-of-type(2) { background: #4caf50; color: white; }
 
     .profile-grid {
       max-width: 1400px;
@@ -143,66 +61,15 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    .player-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-    }
+    .player-photo { width: 100%; height: 250px; object-fit: cover; }
+    .player-card h3 { padding: 15px 20px 5px; color: #667eea; display: flex; justify-content: space-between; }
+    .jersey { background: #764ba2; color: white; padding: 4px 12px; border-radius: 20px; }
+    .meta { padding: 5px 20px 15px; color: #666; }
 
-    .player-photo {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-      background: #f0f0f0;
-    }
-
-    .player-card h3 {
-      padding: 15px 20px 5px;
-      color: #667eea;
-      font-size: 1.3rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .jersey {
-      background: #764ba2;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .meta {
-      padding: 5px 20px 15px;
-      color: #666;
-      line-height: 1.6;
-      font-size: 0.95rem;
-    }
-
-    .links {
-      padding: 15px 20px;
-      border-top: 1px solid #e0e0e0;
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    .links a {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: color 0.3s;
-    }
-
-    .links a:hover {
-      color: #5568d3;
-      text-decoration: underline;
-    }
+    .links { padding: 15px 20px; border-top: 1px solid #e0e0e0; }
+    .links a { color: #667eea; text-decoration: none; font-weight: 600; }
 
     .loading {
       grid-column: 1 / -1;
@@ -220,51 +87,22 @@
       border-radius: 8px;
       text-align: center;
     }
-
-    @media (max-width: 768px) {
-      header h1 {
-        font-size: 1.8rem;
-      }
-
-      .profile-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .controls {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .controls select,
-      .controls button {
-        width: 100%;
-      }
-    }
   </style>
 </head>
+
 <body>
 
 <header>
   <h1>Weatherford High School Athlete Recruiting Board</h1>
-  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif" alt="Kangaroo Logo">
+  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif">
   <p>Multi-sport athlete profiles for college recruiters</p>
 </header>
 
-<div id="debugPanel" class="debug-panel">
-  <div><strong>🔍 DEBUG CONSOLE</strong></div>
-  <div>Initializing...</div>
-</div>
-
 <section class="controls">
-  <label for="gradSelect"><strong>Class Year:</strong></label>
-  <select id="gradSelect">
-    <option value="2025">2025</option>
-    <option value="2026" selected>2026</option>
-    <option value="2027">2027</option>
-    <option value="2028">2028</option>
-  </select>
+  <label><strong>Class Year:</strong></label>
+  <select id="gradSelect"></select>
 
-  <label for="sportSelect"><strong>Sport:</strong></label>
+  <label><strong>Sport:</strong></label>
   <select id="sportSelect">
     <option value="all">All Sports</option>
     <option value="football">Football</option>
@@ -280,7 +118,6 @@
   <button onclick="window.open('https://script.google.com/macros/s/AKfycbwhFXzANdtYL0czn9Yl5ESnAxspV7HfiJ8BJJ1PvW0uDFYYmvimZ2J677OJIn5yCMUf/exec','_blank')">
     Manage Athletes
   </button>
-  <button onclick="testAllCollections()">🔍 Test All Collections</button>
 </section>
 
 <div id="athleteContainer" class="profile-grid"></div>
@@ -289,18 +126,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// Debug logging helper
-const debugLog = (message, data = null) => {
-  const panel = document.getElementById('debugPanel');
-  const div = document.createElement('div');
-  const timestamp = new Date().toLocaleTimeString();
-  div.innerHTML = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}`;
-  panel.appendChild(div);
-  panel.scrollTop = panel.scrollHeight;
-  console.log(message, data);
-};
-
-// Firebase config
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
   authDomain: "roo-recruits.firebaseapp.com",
@@ -310,202 +136,73 @@ const firebaseConfig = {
   appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
 
-debugLog('Initializing Firebase with config', { projectId: firebaseConfig.projectId });
-
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app, "roorecruits2");
 
-// Try WITHOUT specifying the database name first
-let db;
-try {
-  db = getFirestore(app);
-  debugLog('✅ Connected to default Firestore database');
-} catch (err) {
-  debugLog('❌ Error connecting to Firestore', err.message);
+/* Populate Grad Years */
+async function loadGradYears() {
+  const select = document.getElementById("gradSelect");
+  select.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "athletes"));
+  const years = new Set();
+
+  snap.forEach(doc => {
+    if (doc.data().gradYear) years.add(String(doc.data().gradYear));
+  });
+
+  [...years].sort().forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = `Class of ${y}`;
+    select.appendChild(opt);
+  });
 }
 
-// Test function to check all collections
-window.testAllCollections = async function() {
-  debugLog('🔍 Testing all possible database configurations...');
-  
-  // Test 1: Default database
-  try {
-    debugLog('Testing default database...');
-    const testDb = getFirestore(app);
-    
-    // Try to list all collections (won't work, but we can try specific ones)
-    const collectionsToTest = ['athletes', 'athleteSports', 'Athletes', 'AthleteSports'];
-    
-    for (const collName of collectionsToTest) {
-      try {
-        const snap = await getDocs(collection(testDb, collName));
-        debugLog(`✅ Collection '${collName}' - Found ${snap.size} documents`);
-        if (snap.size > 0) {
-          snap.forEach(doc => {
-            debugLog(`  Document ID: ${doc.id}`, doc.data());
-          });
-        }
-      } catch (err) {
-        debugLog(`❌ Collection '${collName}' - Error: ${err.message}`);
-      }
-    }
-  } catch (err) {
-    debugLog('❌ Default database error', err.message);
-  }
-  
-  // Test 2: Named database
-  try {
-    debugLog('Testing named database "roorecruits2"...');
-    const testDb2 = getFirestore(app, "roorecruits2");
-    
-    const collectionsToTest = ['athletes', 'athleteSports', 'Athletes', 'AthleteSports'];
-    
-    for (const collName of collectionsToTest) {
-      try {
-        const snap = await getDocs(collection(testDb2, collName));
-        debugLog(`✅ Collection '${collName}' in roorecruits2 - Found ${snap.size} documents`);
-        if (snap.size > 0) {
-          snap.forEach(doc => {
-            debugLog(`  Document ID: ${doc.id}`, doc.data());
-          });
-        }
-      } catch (err) {
-        debugLog(`❌ Collection '${collName}' in roorecruits2 - Error: ${err.message}`);
-      }
-    }
-  } catch (err) {
-    debugLog('❌ Named database error', err.message);
-  }
-};
-
-window.loadBoard = async function() {
+/* Load Board */
+window.loadBoard = async function () {
   const gradYear = document.getElementById("gradSelect").value;
   const sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
 
-  debugLog(`🏀 Loading board for: Class ${gradYear}, Sport: ${sport}`);
-  container.innerHTML = "<p class='loading'>Loading athletes...</p>";
+  container.innerHTML = `<div class="loading">Loading athletes...</div>`;
 
-  try {
-    // Step 1: Try to get athletes
-    debugLog(`📋 Querying athletes collection with gradYear=${gradYear}`);
-    
-    const athletesRef = collection(db, "athletes");
-    debugLog('Athletes collection reference created');
-    
-    const athletesQuery = query(
-      athletesRef,
-      where("gradYear", "==", gradYear),
-      orderBy("name")
-    );
-    debugLog('Athletes query created with where and orderBy');
-    
-    const athletesSnap = await getDocs(athletesQuery);
-    debugLog(`✅ Athletes query returned ${athletesSnap.size} documents`);
-    
-    const athletes = {};
-    athletesSnap.forEach(doc => {
-      athletes[doc.id] = doc.data();
-      debugLog(`  Athlete: ${doc.id}`, doc.data());
-    });
+  const athletesSnap = await getDocs(
+    query(collection(db, "athletes"), where("gradYear", "==", gradYear))
+  );
 
-    // Step 2: Get sport-specific data
-    debugLog(`⚽ Querying athleteSports collection with sport=${sport}`);
-    
-    let sportQuery;
-    if (sport === "all") {
-      sportQuery = collection(db, "athleteSports");
-      debugLog('Getting ALL sports');
-    } else {
-      sportQuery = query(
-        collection(db, "athleteSports"), 
-        where("sport", "==", sport)
-      );
-      debugLog(`Filtering for sport: ${sport}`);
-    }
-    
-    const sportSnap = await getDocs(sportQuery);
-    debugLog(`✅ Sport query returned ${sportSnap.size} documents`);
+  const athletes = {};
+  athletesSnap.forEach(d => athletes[d.id] = d.data());
 
-    const players = [];
-    sportSnap.forEach(doc => {
-      const sportData = doc.data();
-      debugLog(`  Sport doc: ${doc.id}`, sportData);
-      
-      const athlete = athletes[sportData.athleteId];
-      
-      if (athlete && athlete.gradYear === gradYear) {
-        debugLog(`  ✅ Matched athlete: ${sportData.athleteId}`);
-        players.push({
-          ...athlete,
-          ...sportData,
-          id: doc.id
-        });
-      } else {
-        debugLog(`  ❌ No match for athleteId: ${sportData.athleteId} (athlete exists: ${!!athlete}, gradYear match: ${athlete?.gradYear === gradYear})`);
-      }
-    });
+  const sportSnap = sport === "all"
+    ? await getDocs(collection(db, "athleteSports"))
+    : await getDocs(query(collection(db, "athleteSports"), where("sport", "==", sport)));
 
-    // Sort by name
-    players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    debugLog(`📊 Final player count: ${players.length}`);
+  const players = [];
+  sportSnap.forEach(doc => {
+    const s = doc.data();
+    const a = athletes[s.athleteId];
+    if (a) players.push({ ...a, ...s });
+  });
 
-    // Display results
-    if (players.length === 0) {
-      container.innerHTML = "<p class='loading'>No athletes found for this selection.</p>";
-      debugLog('❌ No players to display');
-      return;
-    }
+  container.innerHTML = "";
+  players.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "player-card";
+    card.innerHTML = `
+      <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300x250'}">
+      <h3>${p.name || "Unknown"} <span class="jersey">#${p.jersey || "—"}</span></h3>
+      <p class="meta">
+        <strong>${p.sport}</strong> • ${p.position}<br>
+        ${p.height} • ${p.weight} lbs • GPA ${p.gpa || "—"}
+      </p>`;
+    container.appendChild(card);
+  });
+};
 
-    debugLog(`🎨 Rendering ${players.length} player cards`);
-    container.innerHTML = "";
-    players.forEach(p => {
-      const card = document.createElement("div");
-      card.className = "player-card";
-      
-      card.innerHTML = `
-        <img class="player-photo" 
-             src="${p.photoUrl || 'https://via.placeholder.com/300x250/667eea/ffffff?text=No+Photo'}" 
-             alt="${p.name || 'Athlete'}"
-             onerror="this.src='https://via.placeholder.com/300x250/667eea/ffffff?text=No+Photo'">
-        <h3>
-          ${p.name || 'Unknown'} 
-          <span class="jersey">#${p.jersey || "—"}</span>
-        </h3>
-        <p class="meta">
-          <strong>${p.sport || 'Sport N/A'}</strong> • ${p.position || "Position N/A"}<br>
-          ${p.height || "—"} • ${p.weight || "—"} lbs • GPA ${p.gpa || "—"}
-        </p>
-        ${p.hudl || p.twitter ? `
-          <div class="links">
-            ${p.hudl ? `<a href="${p.hudl}" target="_blank" rel="noopener">🎥 Hudl</a>` : ""}
-            ${p.twitter ? `<a href="${p.twitter}" target="_blank" rel="noopener">🐦 Twitter/X</a>` : ""}
-          </div>
-        ` : ''}
-      `;
-      
-      container.appendChild(card);
-    });
-
-  } catch (err) {
-    debugLog('❌ ERROR in loadBoard', err);
-    console.error('Full error:', err);
-    container.innerHTML = `<p class="error">Error loading athletes: ${err.message}<br><small>Check the debug panel above for details</small></p>`;
-  }
-}
-
-// Initial load
-debugLog('🚀 Page loaded, starting initial load');
+/* Boot */
+await loadGradYears();
 loadBoard();
-
-// Add event listeners
-document.getElementById("gradSelect").addEventListener("change", () => {
-  debugLog('Grad year changed');
-  loadBoard();
-});
-document.getElementById("sportSelect").addEventListener("change", () => {
-  debugLog('Sport changed');
-  loadBoard();
-});
 </script>
 
 </body>
