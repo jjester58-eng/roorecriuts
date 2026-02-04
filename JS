@@ -126,7 +126,7 @@ async function loadBoard() {
 window.loadBoard = loadBoard;
 
 // Event listeners
-document.getElementById("gradSelect").addEventListener("change", loadBoard);
+document.getElementById("gradYearSelect").addEventListener("change", loadBoard);
 document.getElementById("sportSelect").addEventListener("change", loadBoard);
 
 // Initial load (defaults to 2026 Football)
