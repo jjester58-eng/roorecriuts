@@ -5,7 +5,7 @@
   <title>Weatherford HS Athlete Recruiting Board</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- STYLES: unchanged -->
+  <!-- STYLES -->
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -23,7 +23,7 @@
 
     .controls {
       max-width: 1200px;
-      margin: 0 auto 30px;
+      margin: 0 auto 20px;
       background: white;
       padding: 20px;
       border-radius: 12px;
@@ -47,6 +47,20 @@
 
     .controls button:first-of-type { background: #667eea; color: white; }
     .controls button:nth-of-type(2) { background: #4caf50; color: white; }
+
+    /* Head Coach Box */
+    #coachInfo {
+      max-width: 800px;
+      margin: 0 auto 30px;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: none; /* hidden until loaded */
+    }
+    #coachInfo h3 { color: #667eea; margin-bottom: 5px; }
+    #coachInfo p { color: #333; font-size: 16px; }
 
     .profile-grid {
       max-width: 1400px;
@@ -105,27 +119,23 @@
   <label><strong>Sport:</strong></label>
   <select id="sportSelect">
     <option value="all">All Sports</option>
-    <option value="football">Football</option>
-    <option value="track">Track & Field</option>
-    <option value="powerlifting">Powerlifting</option>
-    <option value="baseball">Baseball</option>
-    <option value="basketball">Basketball</option>
-    <option value="volleyball">Volleyball</option>
-    <option value="soccer">Soccer</option>
   </select>
 
   <button onclick="loadBoard()">Load Athletes</button>
- <button onclick="window.open('https://script.google.com/macros/s/AKfycbxmCjicex3n6KDVPxQxkwsPVtilcpQg0_JnEwL9HsKuU6ywfnJNA1dPyQPT2abtrjTA/exec', '_blank')">
-  Manage Athletes
-</button>
-
+  <button onclick="window.open('https://script.google.com/macros/s/AKfycbxmCjicex3n6KDVPxQxkwsPVtilcpQg0_JnEwL9HsKuU6ywfnJNA1dPyQPT2abtrjTA/exec', '_blank')">
+    Manage Athletes
+  </button>
 </section>
 
+<!-- Head Coach Info -->
+<div id="coachInfo"></div>
+
+<!-- Athlete Cards -->
 <div id="athleteContainer" class="profile-grid"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 /* Firebase */
 const firebaseConfig = {
@@ -136,7 +146,6 @@ const firebaseConfig = {
   messagingSenderId: "727330176313",
   appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app, "roorecruits2");
 
@@ -147,10 +156,7 @@ async function loadGradYears() {
 
   const snap = await getDocs(collection(db, "athletes"));
   const years = new Set();
-
-  snap.forEach(doc => {
-    if (doc.data().gradYear) years.add(String(doc.data().gradYear));
-  });
+  snap.forEach(doc => { if (doc.data().gradYear) years.add(String(doc.data().gradYear)); });
 
   [...years].sort().forEach(y => {
     const opt = document.createElement("option");
@@ -160,24 +166,44 @@ async function loadGradYears() {
   });
 }
 
-/* Load Board */
-window.loadBoard = async function () {
+/* Populate Sports dynamically */
+async function loadSports() {
+  const select = document.getElementById("sportSelect");
+  select.innerHTML = '<option value="all">All Sports</option>';
+
+  const snap = await getDocs(collection(db, "athleteSports"));
+  const sports = new Set();
+  snap.forEach(doc => { if (doc.data().sport) sports.add(doc.data().sport); });
+
+  [...sports].sort().forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.toLowerCase().replace(/\s+/g, "_");
+    opt.textContent = s;
+    select.appendChild(opt);
+  });
+}
+
+/* Load Athletes + Head Coach */
+window.loadBoard = async function() {
   const gradYear = document.getElementById("gradSelect").value;
-  const sport = document.getElementById("sportSelect").value;
+  let sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
+  const coachDiv = document.getElementById("coachInfo");
 
   container.innerHTML = `<div class="loading">Loading athletes...</div>`;
+  coachDiv.style.display = "none";
+  coachDiv.innerHTML = "";
 
-  const athletesSnap = await getDocs(
-    query(collection(db, "athletes"), where("gradYear", "==", gradYear))
-  );
-
+  // 1️⃣ Get athletes for selected year
+  const athletesSnap = await getDocs(query(collection(db, "athletes"), where("gradYear", "==", gradYear)));
   const athletes = {};
   athletesSnap.forEach(d => athletes[d.id] = d.data());
 
-  const sportSnap = sport === "all"
-    ? await getDocs(collection(db, "athleteSports"))
-    : await getDocs(query(collection(db, "athleteSports"), where("sport", "==", sport)));
+  // 2️⃣ Get athleteSports (filter by sport if not "all")
+  const sportQuery = sport === "all"
+    ? collection(db, "athleteSports")
+    : query(collection(db, "athleteSports"), where("sport", "==", sport));
+  const sportSnap = await getDocs(sportQuery);
 
   const players = [];
   sportSnap.forEach(doc => {
@@ -186,6 +212,17 @@ window.loadBoard = async function () {
     if (a) players.push({ ...a, ...s });
   });
 
+  // 3️⃣ Get Head Coach for sport (name + email)
+  if (sport !== "all") {
+    const coachSnap = await getDocs(query(collection(db, "coaches"), where("sport", "==", sport)));
+    if (!coachSnap.empty) {
+      const coach = coachSnap.docs[0].data();
+      coachDiv.innerHTML = `<h3>Head Coach: ${coach.name}</h3><p>Email: <a href="mailto:${coach.email}">${coach.email}</a></p>`;
+      coachDiv.style.display = "block";
+    }
+  }
+
+  // 4️⃣ Display athlete cards
   container.innerHTML = "";
   players.forEach(p => {
     const card = document.createElement("div");
@@ -199,10 +236,11 @@ window.loadBoard = async function () {
       </p>`;
     container.appendChild(card);
   });
-};
+}
 
 /* Boot */
 await loadGradYears();
+await loadSports();
 loadBoard();
 </script>
 
