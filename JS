@@ -2,18 +2,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
 
-/* ==============================
-   Firebase Config for roorecruits2
-============================== */
 const firebaseConfig2 = {
   apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
   authDomain: "roosports-117c3.firebaseapp.com",
   projectId: "roosports-117c3",
-  storageBucket: "roosports-117c3.firebasestorage.app",
+  storageBucket: "roosports-117c3.appspot.com", // ✅ corrected
   messagingSenderId: "894863108698",
   appId: "1:894863108698:web:2e3229b93bca82accc4663",
   measurementId: "G-HH4CJNWWH0"
 };
+
+const app = initializeApp(firebaseConfig2);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
 /* ==============================
    Populate Grad Years
 ============================== */
