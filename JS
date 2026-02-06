@@ -255,4 +255,10 @@ async function loadBoard() {
     document.getElementById("athleteContainer").innerHTML = `<div class="error">Failed to initialize application: ${err.message}</div>`;
   }
 })();
+console.log("Firebase Project ID:", db.app.options.projectId);
+
+const snap = await getDocs(collection(db, "athletes"));
+console.log("Athletes docs count:", snap.size);
+snap.forEach(doc => console.log(doc.id, doc.data()));
+
 </script>
