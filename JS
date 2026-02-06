@@ -19,26 +19,37 @@ const db = getFirestore(app);
 console.log("Firebase Project ID:", db.app.options.projectId);
 
 /* ==============================
-   Load Grad Years & Sports from athletes collection
+   Load Grad Years & Sports
 ============================== */
 async function loadFilters() {
   const gradSelect = document.getElementById("gradSelect");
   const sportSelect = document.getElementById("sportSelect");
 
-  const snap = await getDocs(collection(db, "athletes"));
-  const years = new Set();
-  const sports = new Set();
+  try {
+    const snap = await getDocs(collection(db, "athletes"));
+    const years = new Set();
+    const sports = new Set();
 
-  snap.forEach(doc => {
-    const data = doc.data();
-    if (data.gradYear) years.add(String(data.gradYear));
-    if (data.sport) sports.add(data.sport.toLowerCase());
-  });
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (data.gradYear) years.add(String(data.gradYear));
+      if (data.sport) sports.add(data.sport.toLowerCase());
+    });
 
-  // Populate Grad Year
-  gradSelect.innerHTML = [...years].sort((a,b)=>a-b).map(y=>`<option value="${y}">Class of ${y}</option>`).join("");
-  // Populate Sports
-  sportSelect.innerHTML = `<option value="all">All Sports</option>` + [...sports].sort().map(s=>`<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join("");
+    // Populate Grad Year
+    const sortedYears = [...years].sort((a,b) => a - b);
+    gradSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Class of ${y}</option>`).join("");
+    
+    // Populate Sports
+    const sortedSports = [...sports].sort();
+    sportSelect.innerHTML = `<option value="all">All Sports</option>` + 
+      sortedSports.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join("");
+    
+    console.log("Filters loaded:", sortedYears.length, "years,", sortedSports.length, "sports");
+  } catch (err) {
+    console.error("Error loading filters:", err);
+    gradSelect.innerHTML = '<option value="">Error loading years</option>';
+  }
 }
 
 /* ==============================
@@ -46,90 +57,39 @@ async function loadFilters() {
 ============================== */
 async function loadCoaches(selectedSport) {
   const container = document.getElementById("coachContainer");
-  let coachSnap;
-
-  if (selectedSport === "all") {
-    coachSnap = await getDocs(collection(db, "coaches"));
-  } else {
-    coachSnap = await getDocs(query(collection(db, "coaches"), where("sport", "==", selectedSport)));
-  }
-
-  const coaches = [];
-  coachSnap.forEach(doc => coaches.push(doc.data()));
-
-  container.innerHTML = coaches.length
-    ? `<h2>🏆 Coaches</h2>` + coaches.map(c=>`
-        <div class="coach-card">
-          <h3>${c.name}</h3>
-          <div>${c.title || ""}</div>
-          ${c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : ""}
-        </div>
-      `).join("")
-    : "";
-}
-
-/* ==============================
-   Load Athletes
-============================== */
-async function loadBoard() {
-  const gradYear = document.getElementById("gradSelect").value;
-  const sport = document.getElementById("sportSelect").value;
-  const container = document.getElementById("athleteContainer");
-
-  if (!gradYear) {
-    container.innerHTML = "<div>Please select a class year</div>";
-    return;
-  }
-
-  container.innerHTML = "<div>Loading athletes...</div>";
-
-  // Query athletes
-  const athletesSnap = await getDocs(query(collection(db, "athletes"), where("gradYear","==",gradYear)));
-  const players = [];
-  athletesSnap.forEach(doc=>{
-    const data = doc.data();
-    if (sport==="all" || (data.sport && data.sport.toLowerCase()===sport)) {
-      players.push({id:doc.id, ...data});
+  
+  try {
+    let coachSnap;
+    if (selectedSport === "all") {
+      coachSnap = await getDocs(collection(db, "coaches"));
+    } else {
+      coachSnap = await getDocs(query(collection(db, "coaches"), where("sport", "==", selectedSport)));
     }
-  });
 
-  // Load coaches for selected sport
-  await loadCoaches(sport);
+    const coaches = [];
+    coachSnap.forEach(doc => coaches.push(doc.data()));
 
-  if (!players.length) {
-    container.innerHTML = `<div>No athletes found for Class of ${gradYear}${sport==="all"?"":' - '+sport}</div>`;
-    return;
+    if (coaches.length > 0) {
+      container.innerHTML = `<h2>🏆 Coaches</h2><div class="coach-grid">` + 
+        coaches.map(c => `
+          <div class="coach-card">
+            <h3>${c.name}</h3>
+            ${c.sport ? `<div class="sport-tag">${c.sport}</div>` : ''}
+            ${c.title ? `<div class="title">${c.title}</div>` : ''}
+            ${c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : ''}
+          </div>
+        `).join("") + `</div>`;
+    } else {
+      container.innerHTML = "";
+    }
+  } catch (err) {
+    console.error("Error loading coaches:", err);
+    container.innerHTML = "";
   }
-
-  // Display players
-  container.innerHTML = "";
-  players.sort((a,b)=> (a.name||'').localeCompare(b.name||'')).forEach(p=>{
-    const card = document.createElement("div");
-    card.className = "player-card";
-    card.innerHTML = `
-      <img src="${p.photoUrl||'https://via.placeholder.com/300x280'}" alt="${p.name||'Athlete'}">
-      <h3>${p.name||'Unknown'} ${p.jersey?`#${p.jersey}`:''}</h3>
-      <div>${p.sport || ''} • ${p.position || ''}</div>
-      <div>${p.height||'-'} • ${p.weight||'-'} lbs • GPA ${p.gpa||'-'}</div>
-    `;
-    container.appendChild(card);
-  });
 }
 
 /* ==============================
-   Init
-============================== */
-(async function init(){
-  await loadFilters();
-  await loadBoard();
-
-  document.getElementById("gradSelect").addEventListener("change", loadBoard);
-  document.getElementById("sportSelect").addEventListener("change", loadBoard);
-})();
-
-
-/* ==============================
-   Create Player Card HTML
+   Create Player Card
 ============================== */
 function createPlayerCard(player) {
   const card = document.createElement("div");
@@ -221,7 +181,9 @@ async function loadBoard() {
     sportSnap.forEach(doc => {
       const sportData = doc.data();
       const athlete = athletes[sportData.athleteId];
-      if (athlete) players.push({ ...athlete, ...sportData, id: doc.id });
+      if (athlete) {
+        players.push({ ...athlete, ...sportData, id: doc.id });
+      }
     });
 
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -233,6 +195,7 @@ async function loadBoard() {
     }
 
     players.forEach(player => container.appendChild(createPlayerCard(player)));
+    console.log("Loaded", players.length, "athletes");
 
   } catch (err) {
     console.error('Error loading athletes:', err);
@@ -245,17 +208,15 @@ async function loadBoard() {
 ============================== */
 (async function init() {
   try {
-    await loadGradYears();
-    await loadSports();
+    await loadFilters();
     await loadBoard();
 
     document.getElementById("gradSelect").addEventListener("change", loadBoard);
     document.getElementById("sportSelect").addEventListener("change", loadBoard);
+    
+    console.log("App initialized successfully");
   } catch (err) {
     console.error("Initialization error:", err);
     document.getElementById("athleteContainer").innerHTML = `<div class="error">Failed to initialize application: ${err.message}</div>`;
   }
 })();
-
-
-</script>
