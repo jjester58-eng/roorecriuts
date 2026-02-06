@@ -1,192 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Roo Recruits</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1 {
-      margin-bottom: 10px;
-    }
-
-    .controls {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    select {
-      padding: 6px;
-      font-size: 14px;
-    }
-
-    #coachBox {
-      margin-bottom: 16px;
-      padding: 10px;
-      background: #fff;
-      border-left: 4px solid #800000;
-    }
-
-    #athleteContainer {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 12px;
-    }
-
-    .card {
-      background: #fff;
-      padding: 10px;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.15);
-    }
-
-    .card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-
-    .muted {
-      color: #666;
-      font-size: 13px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Weatherford HS Athletic Recruiting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Roo Recruits</h1>
+<header>
+  <div class="header-content">
+    <img src="https://3.files.edl.io/ec1d/23/08/08/202417-93245495-76a7-475c-af85-c7a6982d169e.png" alt="Weatherford Logo" class="logo">
+    <div class="header-text">
+      <h1>Weatherford High School</h1>
+      <p>Athletic Recruiting Portal</p>
+    </div>
+  </div>
+</header>
 
-<div class="controls">
-  <select id="gradSelect"></select>
-  <select id="sportSelect"></select>
-</div>
+<section class="controls">
+  <div class="filter-group">
+    <label for="gradSelect">Class Year:</label>
+    <select id="gradSelect">
+      <option value="">Loading...</option>
+    </select>
+  </div>
 
-<div id="coachBox"></div>
+  <div class="filter-group">
+    <label for="sportSelect">Sport:</label>
+    <select id="sportSelect">
+      <option value="all">All Sports</option>
+    </select>
+  </div>
 
-<div id="athleteContainer"></div>
+  <button class="btn-primary" onclick="window.open('https://script.google.com/macros/s/AKfycbxgLUEC6oIWSSZQ3kgLx6WHzN3CggViv7KkcMIjpTDV9MzXjXnSSNDPiu92j9VSHy7e/exec','_blank')">
+    ⚙️ Manage Athletes
+  </button>
+</section>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
+<div id="coachContainer" class="coach-container"></div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
-    authDomain: "roosports-117c3.firebaseapp.com",
-    projectId: "roosports-117c3",
-    storageBucket: "roosports-117c3.appspot.com",
-    messagingSenderId: "894863108698",
-    appId: "1:894863108698:web:2e3229b93bca82accc4663",
-    measurementId: "G-HH4CJNWWH0"
-  };
+<div id="athleteContainer" class="athlete-grid"></div>
 
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const db = getFirestore(app);
-
-  const gradSelect = document.getElementById("gradSelect");
-  const sportSelect = document.getElementById("sportSelect");
-  const athleteContainer = document.getElementById("athleteContainer");
-  const coachBox = document.getElementById("coachBox");
-
-  let athletes = [];
-  let coaches = [];
-
-  /* =========================
-     LOAD DATA
-  ========================= */
-  async function loadData() {
-    const athleteSnap = await getDocs(collection(db, "athletes"));
-    athletes = athleteSnap.docs.map(d => d.data());
-
-    const coachSnap = await getDocs(collection(db, "coaches"));
-    coaches = coachSnap.docs.map(d => d.data());
-  }
-
-  /* =========================
-     BUILD FILTERS
-  ========================= */
-  function buildFilters() {
-    const years = [...new Set(athletes.map(a => a.gradYear))].sort();
-    const sports = [...new Set(athletes.map(a => a.sport))].sort();
-
-    gradSelect.innerHTML = years.map(y => `<option value="${y}">Class of ${y}</option>`).join("");
-
-    sportSelect.innerHTML = `<option value="all">All Sports</option>` +
-      sports.map(s => `<option value="${s}">${s}</option>`).join("");
-  }
-
-  /* =========================
-     RENDER COACH
-  ========================= */
-  function renderCoach() {
-    const sport = sportSelect.value;
-    if (sport === "all") {
-      coachBox.innerHTML = "";
-      return;
-    }
-
-    const coach = coaches.find(c => c.sport === sport);
-    coachBox.innerHTML = coach ? 
-      `<strong>Head Coach:</strong> ${coach.name}<br>
-       <a href="mailto:${coach.email}">${coach.email}</a>` : "";
-  }
-
-  /* =========================
-     RENDER ATHLETES
-  ========================= */
-  function renderAthletes() {
-    const year = gradSelect.value;
-    const sport = sportSelect.value;
-
-    athleteContainer.innerHTML = "";
-
-    athletes.filter(a => a.gradYear == year && (sport === "all" || a.sport === sport))
-      .forEach(a => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-          <img src="${a.photoUrl || "https://via.placeholder.com/300x200"}">
-          <strong>${a.name}</strong><br>
-          <span class="muted">${a.sport} • ${a.position || ""}</span>
-        `;
-        athleteContainer.appendChild(div);
-      });
-  }
-
-  /* =========================
-     INIT
-  ========================= */
-  (async function init() {
-    try {
-      await loadData();
-      buildFilters();
-      renderCoach();
-      renderAthletes();
-
-      gradSelect.addEventListener("change", () => {
-        renderAthletes();
-      });
-
-      sportSelect.addEventListener("change", () => {
-        renderCoach();
-        renderAthletes();
-      });
-    } catch (err) {
-      document.body.innerHTML = "<h2>Load error</h2><pre>" + err.message + "</pre>";
-      console.error(err);
-    }
-  })();
-</script>
+<script type="module" src="app.js"></script>
 
 </body>
 </html>
