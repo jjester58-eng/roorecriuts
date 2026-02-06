@@ -1,19 +1,20 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
 
-const firebaseConfig2 = {
+/* ==============================
+   Firebase Configuration
+============================== */
+const firebaseConfig = {
   apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
   authDomain: "roosports-117c3.firebaseapp.com",
   projectId: "roosports-117c3",
-  storageBucket: "roosports-117c3.appspot.com", // ✅ corrected
+  storageBucket: "roosports-117c3.appspot.com",
   messagingSenderId: "894863108698",
   appId: "1:894863108698:web:2e3229b93bca82accc4663",
   measurementId: "G-HH4CJNWWH0"
 };
 
-const app = initializeApp(firebaseConfig2);
-const analytics = getAnalytics(app);
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* ==============================
@@ -22,78 +23,209 @@ const db = getFirestore(app);
 async function loadGradYears() {
   const select = document.getElementById("gradSelect");
   select.innerHTML = "";
-  const snap = await getDocs(collection(db, "athletes"));
-  const years = new Set();
+  
+  try {
+    const snap = await getDocs(collection(db, "athletes"));
+    const years = new Set();
 
-  snap.forEach(doc => {
-    if (doc.data().gradYear) years.add(String(doc.data().gradYear));
-  });
+    snap.forEach(doc => {
+      const gradYear = doc.data().gradYear;
+      if (gradYear) {
+        years.add(String(gradYear));
+      }
+    });
 
-  [...years].sort().forEach(y => {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = `Class of ${y}`;
-    select.appendChild(opt);
-  });
+    const sortedYears = [...years].sort();
+    
+    if (sortedYears.length === 0) {
+      select.innerHTML = '<option value="">No data available</option>';
+      return;
+    }
+
+    sortedYears.forEach(y => {
+      const opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = `Class of ${y}`;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error loading grad years:", err);
+    select.innerHTML = '<option value="">Error loading</option>';
+  }
 }
 
 /* ==============================
-   Populate Sports Dropdown Dynamically
+   Populate Sports Dropdown
 ============================== */
 async function loadSports() {
   const sportSelect = document.getElementById("sportSelect");
   sportSelect.innerHTML = `<option value="all">All Sports</option>`;
 
-  const snap = await getDocs(collection(db, "athleteSports"));
-  const sports = new Set();
-  snap.forEach(doc => {
-    if (doc.data().sport) sports.add(doc.data().sport.toLowerCase());
-  });
+  try {
+    const snap = await getDocs(collection(db, "athleteSports"));
+    const sports = new Set();
+    
+    snap.forEach(doc => {
+      const sport = doc.data().sport;
+      if (sport) {
+        sports.add(sport.toLowerCase());
+      }
+    });
 
-  [...sports].sort().forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-    sportSelect.appendChild(opt);
-  });
+    [...sports].sort().forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+      sportSelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error loading sports:", err);
+  }
 }
 
 /* ==============================
-   Load Head Coach Info
+   Load Coaches
 ============================== */
-async function loadCoach(sport) {
-  const containerId = "coachContainer";
-  let container = document.getElementById(containerId);
+async function loadCoaches(sport) {
+  const container = document.getElementById("coachContainer");
+  
+  try {
+    let coachSnap;
+    
+    if (sport === "all") {
+      // Show Athletic Director and Assistant Athletic Director
+      coachSnap = await getDocs(
+        query(collection(db, "coaches"), 
+        where("title", "in", ["Athletic Director", "Assistant Athletic Director"]))
+      );
+    } else {
+      // Show coach for the selected sport
+      coachSnap = await getDocs(
+        query(collection(db, "coaches"), where("sport", "==", sport))
+      );
+    }
 
-  if (!container) {
-    container = document.createElement("div");
-    container.id = containerId;
-    container.className = "head-coach";
-    document.body.insertBefore(container, document.getElementById("athleteContainer"));
-  }
+    if (coachSnap.empty) {
+      container.innerHTML = "";
+      return;
+    }
 
-  if (sport === "all") {
+    const coaches = [];
+    coachSnap.forEach(doc => {
+      coaches.push(doc.data());
+    });
+
+    // Sort: Athletic Director first, then Assistant AD, then alphabetically
+    coaches.sort((a, b) => {
+      if (a.title === "Athletic Director") return -1;
+      if (b.title === "Athletic Director") return 1;
+      if (a.title === "Assistant Athletic Director") return -1;
+      if (b.title === "Assistant Athletic Director") return 1;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    let html = '<h2>🏆 Coaching Staff</h2><div class="coach-grid">';
+    
+    coaches.forEach(coach => {
+      html += `
+        <div class="coach-card">
+          <h3>${coach.name || "Coach"}</h3>
+          <div class="title">${coach.title || "Coach"}</div>
+          ${coach.sport ? `<span class="sport-tag">${coach.sport}</span><br>` : ""}
+          ${coach.email ? `<a href="mailto:${coach.email}">📧 ${coach.email}</a><br>` : ""}
+          ${coach.phone ? `<a href="tel:${coach.phone}">📞 ${coach.phone}</a>` : ""}
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+  } catch (err) {
+    console.error("Error loading coaches:", err);
     container.innerHTML = "";
-    return;
   }
+}
 
-  const coachSnap = await getDocs(
-    query(collection(db, "coaches"), where("sport", "==", sport))
-  );
-
-  let coach = null;
-  coachSnap.forEach(doc => {
-    coach = doc.data();
-  });
-
-  if (coach) {
-    container.innerHTML = `
-      <h3>Head Coach: ${coach.name}</h3>
-      <p>Email: <a href="mailto:${coach.email}">${coach.email}</a></p>
-    `;
-  } else {
-    container.innerHTML = "";
+/* ==============================
+   Create Player Card HTML
+============================== */
+function createPlayerCard(player) {
+  const card = document.createElement("div");
+  card.className = "player-card";
+  
+  // Build stats array dynamically
+  const stats = [];
+  
+  if (player.position) {
+    stats.push({ label: "Position", value: player.position });
   }
+  
+  if (player.height) {
+    stats.push({ label: "Height", value: player.height });
+  }
+  
+  if (player.weight) {
+    stats.push({ label: "Weight", value: `${player.weight} lbs` });
+  }
+  
+  if (player.gpa) {
+    stats.push({ label: "GPA", value: player.gpa });
+  }
+  
+  // Build stats HTML
+  let statsHTML = '';
+  if (stats.length > 0) {
+    statsHTML = '<div class="player-stats">';
+    stats.forEach(stat => {
+      statsHTML += `
+        <div class="stat-item">
+          <span class="stat-label">${stat.label}</span>
+          <span class="stat-value">${stat.value}</span>
+        </div>
+      `;
+    });
+    statsHTML += '</div>';
+  }
+  
+  // Build links
+  let linksHTML = '';
+  if (player.hudl || player.twitter) {
+    linksHTML = '<div class="player-links">';
+    
+    if (player.hudl) {
+      linksHTML += `<a href="${player.hudl}" target="_blank" rel="noopener noreferrer" class="hudl">🎥 Hudl</a>`;
+    }
+    
+    if (player.twitter) {
+      linksHTML += `<a href="${player.twitter}" target="_blank" rel="noopener noreferrer" class="twitter">𝕏 Twitter/X</a>`;
+    }
+    
+    linksHTML += '</div>';
+  }
+  
+  card.innerHTML = `
+    <img class="player-photo" 
+         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'}" 
+         alt="${player.name || 'Athlete'}"
+         loading="lazy"
+         onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'">
+    
+    <div class="card-content">
+      <h3>
+        <span>${player.name || 'Unknown Athlete'}</span>
+        ${player.jersey ? `<span class="jersey">#${player.jersey}</span>` : ''}
+      </h3>
+      
+      ${player.sport ? `<div class="sport-badge">${player.sport}</div>` : ''}
+      
+      ${statsHTML}
+      
+      ${linksHTML}
+    </div>
+  `;
+  
+  return card;
 }
 
 /* ==============================
@@ -104,70 +236,100 @@ async function loadBoard() {
   const sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
 
-  container.innerHTML = `<div class="loading">Loading athletes...</div>`;
-  await loadCoach(sport);
-
-  // Fetch athletes for the selected grad year
-  const athletesSnap = await getDocs(
-    query(collection(db, "athletes"), where("gradYear", "==", gradYear))
-  );
-
-  const athletes = {};
-  athletesSnap.forEach(d => athletes[d.id] = d.data());
-
-  let players = [];
-
-  if (sport === "all") {
-    // Merge athleteSports info for all athletes
-    const sportSnap = await getDocs(collection(db, "athleteSports"));
-    sportSnap.forEach(doc => {
-      const s = doc.data();
-      const a = athletes[s.athleteId];
-      if (a) players.push({ ...a, ...s });
-    });
-  } else {
-    // Only athletes for the selected sport
-    const sportSnap = await getDocs(
-      query(collection(db, "athleteSports"), where("sport", "==", sport))
-    );
-    sportSnap.forEach(doc => {
-      const s = doc.data();
-      const a = athletes[s.athleteId];
-      if (a) players.push({ ...a, ...s });
-    });
-  }
-
-  container.innerHTML = "";
-  if (players.length === 0) {
-    container.innerHTML = `<div class="error">No athletes found for this selection.</div>`;
+  if (!gradYear) {
+    container.innerHTML = '<div class="loading">Please select a class year</div>';
     return;
   }
 
-  players.forEach(p => {
-    const card = document.createElement("div");
-    card.className = "player-card";
-    card.innerHTML = `
-      <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300x250'}">
-      <h3>${p.name || "Unknown"} <span class="jersey">#${p.jersey || "—"}</span></h3>
-      <p class="meta">
-        <strong>${p.sport}</strong> • ${p.position || "-"}<br>
-        ${p.height || "-"} • ${p.weight || "-"} lbs • GPA ${p.gpa || "-"}
-      </p>
+  container.innerHTML = '<div class="loading">Loading athletes...</div>';
+  
+  // Load coaches
+  await loadCoaches(sport);
+
+  try {
+    // Fetch athletes for the selected grad year
+    const athletesSnap = await getDocs(
+      query(collection(db, "athletes"), where("gradYear", "==", gradYear))
+    );
+
+    const athletes = {};
+    athletesSnap.forEach(d => {
+      athletes[d.id] = d.data();
+    });
+
+    // Fetch sports data
+    let sportSnap;
+    if (sport === "all") {
+      sportSnap = await getDocs(collection(db, "athleteSports"));
+    } else {
+      sportSnap = await getDocs(
+        query(collection(db, "athleteSports"), where("sport", "==", sport))
+      );
+    }
+
+    const players = [];
+    sportSnap.forEach(doc => {
+      const sportData = doc.data();
+      const athlete = athletes[sportData.athleteId];
+      
+      if (athlete) {
+        players.push({
+          ...athlete,
+          ...sportData,
+          id: doc.id
+        });
+      }
+    });
+
+    // Sort by name
+    players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    // Display results
+    container.innerHTML = "";
+    
+    if (players.length === 0) {
+      container.innerHTML = `
+        <div class="no-data">
+          <h3>No Athletes Found</h3>
+          <p>No athletes found for Class of ${gradYear} ${sport === 'all' ? '' : '- ' + sport}</p>
+        </div>
+      `;
+      return;
+    }
+
+    players.forEach(player => {
+      container.appendChild(createPlayerCard(player));
+    });
+
+  } catch (err) {
+    console.error('Error loading athletes:', err);
+    container.innerHTML = `
+      <div class="error">
+        Error loading athletes: ${err.message}
+        <br><small>Please check your connection and try again.</small>
+      </div>
     `;
-    container.appendChild(card);
-  });
+  }
 }
 
 /* ==============================
-   Initial Boot
+   Initialize Application
 ============================== */
 (async function init() {
-  await loadGradYears();
-  await loadSports();
-  await loadBoard();
+  try {
+    await loadGradYears();
+    await loadSports();
+    await loadBoard();
 
-  document.getElementById("gradSelect").addEventListener("change", loadBoard);
-  document.getElementById("sportSelect").addEventListener("change", loadBoard);
+    // Add event listeners
+    document.getElementById("gradSelect").addEventListener("change", loadBoard);
+    document.getElementById("sportSelect").addEventListener("change", loadBoard);
+  } catch (err) {
+    console.error("Initialization error:", err);
+    document.getElementById("athleteContainer").innerHTML = `
+      <div class="error">
+        Failed to initialize application: ${err.message}
+      </div>
+    `;
+  }
 })();
-
-</script>
