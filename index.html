@@ -75,28 +75,24 @@
 <div id="athleteContainer"></div>
 
 <script type="module">
-  // ✅ Imports go at the very top
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
 
-  // ✅ Firebase configuration object
   const firebaseConfig = {
     apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
     authDomain: "roosports-117c3.firebaseapp.com",
     projectId: "roosports-117c3",
-    storageBucket: "roosports-117c3.appspot.com",   // corrected
+    storageBucket: "roosports-117c3.appspot.com",
     messagingSenderId: "894863108698",
     appId: "1:894863108698:web:2e3229b93bca82accc4663",
     measurementId: "G-HH4CJNWWH0"
   };
 
-  // ✅ Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
   const db = getFirestore(app);
 
-  // ✅ DOM elements
   const gradSelect = document.getElementById("gradSelect");
   const sportSelect = document.getElementById("sportSelect");
   const athleteContainer = document.getElementById("athleteContainer");
@@ -104,7 +100,6 @@
 
   let athletes = [];
   let coaches = [];
-</script>
 
   /* =========================
      LOAD DATA
@@ -124,12 +119,9 @@
     const years = [...new Set(athletes.map(a => a.gradYear))].sort();
     const sports = [...new Set(athletes.map(a => a.sport))].sort();
 
-    gradSelect.innerHTML = years.map(y =>
-      `<option value="${y}">Class of ${y}</option>`
-    ).join("");
+    gradSelect.innerHTML = years.map(y => `<option value="${y}">Class of ${y}</option>`).join("");
 
-    sportSelect.innerHTML =
-      `<option value="all">All Sports</option>` +
+    sportSelect.innerHTML = `<option value="all">All Sports</option>` +
       sports.map(s => `<option value="${s}">${s}</option>`).join("");
   }
 
@@ -144,10 +136,9 @@
     }
 
     const coach = coaches.find(c => c.sport === sport);
-    coachBox.innerHTML = coach
-      ? `<strong>Head Coach:</strong> ${coach.name}<br>
-         <a href="mailto:${coach.email}">${coach.email}</a>`
-      : "";
+    coachBox.innerHTML = coach ? 
+      `<strong>Head Coach:</strong> ${coach.name}<br>
+       <a href="mailto:${coach.email}">${coach.email}</a>` : "";
   }
 
   /* =========================
@@ -159,11 +150,7 @@
 
     athleteContainer.innerHTML = "";
 
-    athletes
-      .filter(a =>
-        a.gradYear == year &&
-        (sport === "all" || a.sport === sport)
-      )
+    athletes.filter(a => a.gradYear == year && (sport === "all" || a.sport === sport))
       .forEach(a => {
         const div = document.createElement("div");
         div.className = "card";
@@ -179,22 +166,26 @@
   /* =========================
      INIT
   ========================= */
-  try {
-    await loadData();
-    buildFilters();
-    renderCoach();
-    renderAthletes();
-
-    gradSelect.addEventListener("change", renderAthletes);
-    sportSelect.addEventListener("change", () => {
+  (async function init() {
+    try {
+      await loadData();
+      buildFilters();
       renderCoach();
       renderAthletes();
-    });
-  } catch (err) {
-    document.body.innerHTML =
-      "<h2>Load error</h2><pre>" + err.message + "</pre>";
-    console.error(err);
-  }
+
+      gradSelect.addEventListener("change", () => {
+        renderAthletes();
+      });
+
+      sportSelect.addEventListener("change", () => {
+        renderCoach();
+        renderAthletes();
+      });
+    } catch (err) {
+      document.body.innerHTML = "<h2>Load error</h2><pre>" + err.message + "</pre>";
+      console.error(err);
+    }
+  })();
 </script>
 
 </body>
