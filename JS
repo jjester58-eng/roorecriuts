@@ -257,8 +257,12 @@ async function loadBoard() {
 })();
 console.log("Firebase Project ID:", db.app.options.projectId);
 
-const snap = await getDocs(collection(db, "athletes"));
-console.log("Athletes docs count:", snap.size);
-snap.forEach(doc => console.log(doc.id, doc.data()));
+try {
+  const snap = await getDocs(collection(db, "athletes"));
+  console.log("Athletes docs count:", snap.size);
+  snap.forEach(doc => console.log(doc.id, doc.data()));
+} catch (err) {
+  console.error("Error reading athletes:", err);
+}
 
 </script>
