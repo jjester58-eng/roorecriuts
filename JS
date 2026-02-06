@@ -22,7 +22,7 @@ const db = getFirestore(app);
 ============================== */
 async function loadGradYears() {
   const select = document.getElementById("gradSelect");
-  select.innerHTML = "";
+  select.innerHTML = '<option value="">Loading...</option>';
   
   try {
     const snap = await getDocs(collection(db, "athletes"));
@@ -31,23 +31,28 @@ async function loadGradYears() {
     snap.forEach(doc => {
       const gradYear = doc.data().gradYear;
       if (gradYear) {
+        // Keep as string to match Firebase
         years.add(String(gradYear));
       }
     });
 
-    const sortedYears = [...years].sort();
+    // Convert to array and sort numerically
+    const sortedYears = [...years].sort((a, b) => parseInt(a) - parseInt(b));
     
     if (sortedYears.length === 0) {
       select.innerHTML = '<option value="">No data available</option>';
       return;
     }
 
+    select.innerHTML = '';
     sortedYears.forEach(y => {
       const opt = document.createElement("option");
-      opt.value = y;
+      opt.value = y; // Keep as string
       opt.textContent = `Class of ${y}`;
       select.appendChild(opt);
     });
+    
+    console.log('Loaded grad years (as strings):', sortedYears);
   } catch (err) {
     console.error("Error loading grad years:", err);
     select.innerHTML = '<option value="">Error loading</option>';
@@ -247,14 +252,20 @@ async function loadBoard() {
   await loadCoaches(sport);
 
   try {
+    // Keep gradYear as string to match Firebase
+    console.log('Querying for gradYear (string):', gradYear, 'Type:', typeof gradYear);
+    
     // Fetch athletes for the selected grad year
     const athletesSnap = await getDocs(
       query(collection(db, "athletes"), where("gradYear", "==", gradYear))
     );
 
+    console.log('Found athletes:', athletesSnap.size);
+
     const athletes = {};
     athletesSnap.forEach(d => {
       athletes[d.id] = d.data();
+      console.log('Athlete:', d.id, d.data());
     });
 
     // Fetch sports data
@@ -267,6 +278,8 @@ async function loadBoard() {
       );
     }
 
+    console.log('Found sport records:', sportSnap.size);
+
     const players = [];
     sportSnap.forEach(doc => {
       const sportData = doc.data();
@@ -278,8 +291,12 @@ async function loadBoard() {
           ...sportData,
           id: doc.id
         });
+      } else {
+        console.log('No matching athlete for athleteId:', sportData.athleteId);
       }
     });
+
+    console.log('Total players matched:', players.length);
 
     // Sort by name
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
