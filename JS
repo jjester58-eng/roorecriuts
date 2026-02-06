@@ -1,22 +1,26 @@
-<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
 
 /* ==============================
-   Firebase Configuration
+   Firebase Config for roorecruits2
 ============================== */
-const firebaseConfig = {
+const firebaseConfig2 = {
   apiKey: "AIzaSyAEriuPZsbFNBVDBAOri94qHh9-duO7FpM",
   authDomain: "roo-recruits.firebaseapp.com",
   projectId: "roo-recruits",
   storageBucket: "roo-recruits.firebasestorage.app",
   messagingSenderId: "727330176313",
-  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8"
+  appId: "1:727330176313:web:4f5494ef8b683fb07e7ce8",
+  measurementId: "G-HSW9QKGQ6Q"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, "roorecruits2");
+// Initialize Firebase app for roorecruits2
+const app2 = initializeApp(firebaseConfig2, "roorecruits2");
+const analytics = getAnalytics(app2);
 
+// Get Firestore for this app
+const db = getFirestore(app2);
 /* ==============================
    Populate Grad Years
 ============================== */
