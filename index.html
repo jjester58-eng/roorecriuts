@@ -1,45 +1,155 @@
-<script type="module">
-const PROJECT_ID = "roo-recruits";
-const DATABASE = "(default)"; // For REST API, this is usually "(default)"
-const COLLECTION_ATHLETES = "athletes";
-const COLLECTION_SPORTS = "athleteSports";
-const COLLECTION_COACHES = "coaches";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weatherford HS Athlete Recruiting Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-// Firestore REST base URL
-const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/roorecruits2/documents`;
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  min-height: 100vh;
+  padding: 20px;
+}
+header { color: #fff; text-align: center; margin-bottom: 30px; }
+header img { width: 120px; background: #fff; padding: 10px; border-radius: 10px; margin-top: 10px; }
+
+.controls {
+  max-width: 1100px;
+  margin: 0 auto 20px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.controls select {
+  padding: 8px 12px;
+  font-size: 16px;
+}
+
+#coachInfo {
+  max-width: 800px;
+  margin: 0 auto 20px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
+}
+
+.profile-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+  gap: 20px;
+}
+
+.player-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,.15);
+}
+
+.player-photo {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+
+.player-card h3 {
+  padding: 10px 15px 0;
+  color: #667eea;
+  display: flex;
+  justify-content: space-between;
+}
+
+.jersey {
+  background: #764ba2;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.meta {
+  padding: 10px 15px 15px;
+  color: #555;
+}
+
+.loading, .error {
+  grid-column: 1 / -1;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+.error { background: #f44336; color: #fff; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Weatherford HS Recruiting Board</h1>
+  <img src="https://3.files.edl.io/7221/23/08/08/202500-510f7e1a-ff25-44f4-ba9d-afb5b21bbf98.gif">
+  <p>Multi-sport athlete profiles for college recruiters</p>
+</header>
+
+<section class="controls">
+  <label><strong>Class Year</strong></label>
+  <select id="gradSelect"></select>
+
+  <label><strong>Sport</strong></label>
+  <select id="sportSelect">
+    <option value="all">All Sports</option>
+  </select>
+</section>
+
+<div id="coachInfo"></div>
+<div id="athleteContainer" class="profile-grid"></div>
+
+<script>
+/* ==============================
+   FIRESTORE REST CONFIG
+============================== */
+const PROJECT_ID = "roo-recruits";
+const DATABASE = "roorecruits2";
+const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE}/documents`;
 
 /* ==============================
-   Helper to fetch documents from Firestore
+   HELPERS
 ============================== */
-async function fetchCollection(collectionName, filters = []) {
-  let url = `${FIRESTORE_BASE}/${collectionName}`;
-  const response = await fetch(url);
-  const data = await response.json();
-  if (!data.documents) return [];
-  
-  return data.documents.map(doc => {
-    const fields = doc.fields || {};
-    const formatted = {};
-    for (let key in fields) {
-      const valObj = fields[key];
-      formatted[key] = valObj.stringValue || "";
-    }
-    formatted.id = doc.name.split("/").pop();
-    return formatted;
-  }).filter(doc => {
-    return filters.every(f => doc[f.field] === f.value);
+async function fetchCollection(name) {
+  const res = await fetch(`${BASE_URL}/${name}`);
+  const json = await res.json();
+  if (!json.documents) return [];
+  return json.documents.map(d => {
+    const out = {};
+    Object.keys(d.fields || {}).forEach(k => {
+      out[k] = d.fields[k].stringValue || "";
+    });
+    out.id = d.name.split("/").pop();
+    return out;
   });
 }
 
 /* ==============================
-   Populate Grad Years
+   LOAD DROPDOWNS
 ============================== */
 async function loadGradYears() {
   const select = document.getElementById("gradSelect");
   select.innerHTML = "";
-  const athletes = await fetchCollection(COLLECTION_ATHLETES);
-  const years = new Set(athletes.map(a => a.gradYear).filter(Boolean));
-  [...years].sort().forEach(y => {
+  const athletes = await fetchCollection("athletes");
+  const years = [...new Set(athletes.map(a => a.gradYear).filter(Boolean))].sort();
+  years.forEach(y => {
     const opt = document.createElement("option");
     opt.value = y;
     opt.textContent = `Class of ${y}`;
@@ -47,77 +157,67 @@ async function loadGradYears() {
   });
 }
 
-/* ==============================
-   Populate Sports
-============================== */
 async function loadSports() {
   const select = document.getElementById("sportSelect");
   select.innerHTML = `<option value="all">All Sports</option>`;
-  const sportsDocs = await fetchCollection(COLLECTION_SPORTS);
-  const sports = new Set(sportsDocs.map(s => s.sport).filter(Boolean));
-  [...sports].sort().forEach(s => {
+  const sportsDocs = await fetchCollection("athleteSports");
+  const sports = [...new Set(sportsDocs.map(s => s.sport).filter(Boolean))].sort();
+  sports.forEach(s => {
     const opt = document.createElement("option");
     opt.value = s;
-    opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+    opt.textContent = s;
     select.appendChild(opt);
   });
 }
 
 /* ==============================
-   Load Head Coach
+   LOAD COACH
 ============================== */
 async function loadCoach(sport) {
-  const container = document.getElementById("coachInfo");
+  const div = document.getElementById("coachInfo");
   if (sport === "all") {
-    container.style.display = "none";
-    container.innerHTML = "";
+    div.style.display = "none";
     return;
   }
-  const coaches = await fetchCollection(COLLECTION_COACHES, [{ field: "sport", value: sport }]);
-  if (coaches.length === 0) {
-    container.style.display = "none";
-    container.innerHTML = "";
+  const coaches = await fetchCollection("coaches");
+  const coach = coaches.find(c => c.sport === sport);
+  if (!coach) {
+    div.style.display = "none";
     return;
   }
-  const coach = coaches[0];
-  container.innerHTML = `
+  div.innerHTML = `
     <h3>Head Coach: ${coach.name}</h3>
     <p>Email: <a href="mailto:${coach.email}">${coach.email}</a></p>
   `;
-  container.style.display = "block";
+  div.style.display = "block";
 }
 
 /* ==============================
-   Load Athletes
+   LOAD BOARD
 ============================== */
 async function loadBoard() {
-  const gradYear = document.getElementById("gradSelect").value;
-  const sport = document.getElementById("sportSelect").value;
+  const grad = gradSelect.value;
+  const sport = sportSelect.value;
   const container = document.getElementById("athleteContainer");
-  container.innerHTML = `<div class="loading">Loading athletes...</div>`;
 
+  container.innerHTML = `<div class="loading">Loading athletes...</div>`;
   await loadCoach(sport);
 
-  // 1️⃣ Fetch athletes for the grad year
-  const athletes = await fetchCollection(COLLECTION_ATHLETES, [{ field: "gradYear", value: gradYear }]);
+  const athletes = await fetchCollection("athletes");
+  const sports = await fetchCollection("athleteSports");
+
   const athleteMap = {};
-  athletes.forEach(a => athleteMap[a.id] = a);
+  athletes.filter(a => a.gradYear === grad).forEach(a => athleteMap[a.id] = a);
 
-  // 2️⃣ Fetch athleteSports
-  const sportDocs = sport === "all"
-    ? await fetchCollection(COLLECTION_SPORTS)
-    : await fetchCollection(COLLECTION_SPORTS, [{ field: "sport", value: sport }]);
+  const players = sports
+    .filter(s => sport === "all" || s.sport === sport)
+    .map(s => ({ ...athleteMap[s.athleteId], ...s }))
+    .filter(p => p.name);
 
-  const players = [];
-  sportDocs.forEach(s => {
-    const a = athleteMap[s.athleteId];
-    if (a) players.push({ ...a, ...s });
-  });
-
-  // 3️⃣ Render
   container.innerHTML = "";
-  if (players.length === 0) {
-    container.innerHTML = `<div class="error">No athletes found for this selection.</div>`;
+
+  if (!players.length) {
+    container.innerHTML = `<div class="error">No athletes found</div>`;
     return;
   }
 
@@ -126,24 +226,27 @@ async function loadBoard() {
     card.className = "player-card";
     card.innerHTML = `
       <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300x250'}">
-      <h3>${p.name || "Unknown"} <span class="jersey">#${p.jersey || "—"}</span></h3>
-      <p class="meta">
-        <strong>${p.sport || "-"}</strong> • ${p.position || "-"}<br>
-        ${p.height || "-"} • ${p.weight || "-"} lbs • GPA ${p.gpa || "-"}
-      </p>
+      <h3>${p.name}<span class="jersey">#${p.jersey || "—"}</span></h3>
+      <div class="meta">
+        <strong>${p.sport}</strong> • ${p.pos || "-"}<br>
+        ${p.ht || "-"} • ${p.wt || "-"} lbs • GPA ${p.gpa || "-"}
+      </div>
     `;
     container.appendChild(card);
   });
 }
 
 /* ==============================
-   Init
+   INIT
 ============================== */
-await loadGradYears();
-await loadSports();
-
-document.getElementById("gradSelect").addEventListener("change", loadBoard);
-document.getElementById("sportSelect").addEventListener("change", loadBoard);
-
-loadBoard();
+(async function init() {
+  await loadGradYears();
+  await loadSports();
+  gradSelect.addEventListener("change", loadBoard);
+  sportSelect.addEventListener("change", loadBoard);
+  loadBoard();
+})();
 </script>
+
+</body>
+</html>
