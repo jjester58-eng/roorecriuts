@@ -15,8 +15,7 @@ const firebaseConfig = {
   measurementId: "G-HH4CJNWWH0"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, "roorecruits2");
+const db = getFirestore(app);
 
 /* ==============================
    Populate Grad Years
@@ -144,7 +143,13 @@ window.loadBoard = async function () {
 /* ==============================
    Initial Boot
 ============================== */
-await loadGradYears();
-await loadSports();
-loadBoard();
+(async function init() {
+  await loadGradYears();
+  await loadSports();
+  await loadBoard();
+
+  document.getElementById("gradSelect").addEventListener("change", loadBoard);
+  document.getElementById("sportSelect").addEventListener("change", loadBoard);
+})();
+
 </script>
