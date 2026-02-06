@@ -1,155 +1,480 @@
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-/* ==============================
-   Firebase Configuration
-============================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
-  authDomain: "roosports-117c3.firebaseapp.com",
-  projectId: "roosports-117c3",
- storageBucket: "roosports-117c3.appspot.com",
-  messagingSenderId: "894863108698",
-  appId: "1:894863108698:web:2e3229b93bca82accc4663",
-  measurementId: "G-HH4CJNWWH0"
-};
-
-const db = getFirestore(app);
-
-/* ==============================
-   Populate Grad Years
-============================== */
-async function loadGradYears() {
-  const select = document.getElementById("gradSelect");
-  select.innerHTML = "";
-  const snap = await getDocs(collection(db, "athletes"));
-  const years = new Set();
-
-  snap.forEach(doc => {
-    if (doc.data().gradYear) years.add(String(doc.data().gradYear));
-  });
-
-  [...years].sort().forEach(y => {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = `Class of ${y}`;
-    select.appendChild(opt);
-  });
+/* =============================
+   Color Palette
+============================= */
+:root {
+  --royal-blue: #4169E1;
+  --dark-blue: #2C4C8C;
+  --light-blue: #5B8DEE;
+  --white: #FFFFFF;
+  --light-gray: #F5F5F5;
+  --medium-gray: #9E9E9E;
+  --dark-gray: #424242;
+  --black: #000000;
+  --shadow: rgba(0, 0, 0, 0.1);
 }
 
-/* ==============================
-   Populate Sports Dropdown Dynamically
-============================== */
-async function loadSports() {
-  const sportSelect = document.getElementById("sportSelect");
-  sportSelect.innerHTML = `<option value="all">All Sports</option>`;
-
-  const snap = await getDocs(collection(db, "athleteSports"));
-  const sports = new Set();
-  snap.forEach(doc => {
-    if (doc.data().sport) sports.add(doc.data().sport.toLowerCase());
-  });
-
-  [...sports].sort().forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-    sportSelect.appendChild(opt);
-  });
+/* =============================
+   Global Styles
+============================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* ==============================
-   Load Head Coach Info
-============================== */
-async function loadCoach(sport) {
-  if (sport === "all") return null;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, var(--light-gray) 0%, var(--white) 100%);
+  color: var(--black);
+  min-height: 100vh;
+  padding: 20px;
+}
 
-  const coachSnap = await getDocs(
-    query(collection(db, "coaches"), where("sport", "==", sport))
-  );
+/* =============================
+   Header
+============================= */
+header {
+  background: linear-gradient(135deg, var(--royal-blue) 0%, var(--dark-blue) 100%);
+  color: var(--white);
+  padding: 30px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow);
+  margin-bottom: 30px;
+}
 
-  let coach = null;
-  coachSnap.forEach(doc => {
-    coach = doc.data(); // only take the first one
-  });
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
 
-  const coachContainerId = "coachContainer";
-  let container = document.getElementById(coachContainerId);
-  if (!container) {
-    container = document.createElement("div");
-    container.id = coachContainerId;
-    container.className = "head-coach";
-    document.body.insertBefore(container, document.getElementById("athleteContainer"));
+.logo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  background: var(--white);
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.header-text h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-text p {
+  font-size: 1.2rem;
+  opacity: 0.95;
+  font-weight: 300;
+}
+
+/* =============================
+   Controls Section
+============================= */
+.controls {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+  background: var(--white);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px var(--shadow);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  border-left: 4px solid var(--royal-blue);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: var(--dark-gray);
+  font-size: 0.95rem;
+}
+
+.filter-group select {
+  padding: 10px 15px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 6px;
+  font-size: 16px;
+  background: var(--white);
+  color: var(--black);
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 180px;
+}
+
+.filter-group select:hover {
+  border-color: var(--royal-blue);
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--royal-blue);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+}
+
+.btn-primary {
+  padding: 10px 24px;
+  background: var(--royal-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-left: auto;
+}
+
+.btn-primary:hover {
+  background: var(--dark-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(65, 105, 225, 0.3);
+}
+
+/* =============================
+   Coach Container
+============================= */
+.coach-container {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+  background: var(--white);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px var(--shadow);
+  border-left: 4px solid var(--royal-blue);
+}
+
+.coach-container h2 {
+  color: var(--royal-blue);
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.coach-card {
+  background: var(--light-gray);
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid var(--royal-blue);
+  transition: all 0.3s;
+}
+
+.coach-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.coach-card h3 {
+  color: var(--dark-blue);
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.coach-card .title {
+  color: var(--royal-blue);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.coach-card .sport-tag {
+  display: inline-block;
+  background: var(--royal-blue);
+  color: var(--white);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.coach-card a {
+  color: var(--royal-blue);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.coach-card a:hover {
+  color: var(--dark-blue);
+  text-decoration: underline;
+}
+
+/* =============================
+   Athlete Grid
+============================= */
+.athlete-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+/* =============================
+   Player Card
+============================= */
+.player-card {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px var(--shadow);
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.player-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(65, 105, 225, 0.25);
+  border-color: var(--royal-blue);
+}
+
+.player-photo {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  background: var(--light-gray);
+}
+
+.card-content {
+  padding: 20px;
+}
+
+.player-card h3 {
+  color: var(--dark-blue);
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.jersey {
+  background: var(--royal-blue);
+  color: var(--white);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sport-badge {
+  display: inline-block;
+  background: var(--dark-gray);
+  color: var(--white);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 15px;
+}
+
+.player-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 15px 0;
+  padding: 15px;
+  background: var(--light-gray);
+  border-radius: 8px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--medium-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  color: var(--black);
+  font-weight: 600;
+}
+
+.player-links {
+  display: flex;
+  gap: 12px;
+  padding-top: 15px;
+  border-top: 2px solid var(--light-gray);
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.player-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--white);
+  background: var(--royal-blue);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.player-links a:hover {
+  background: var(--dark-blue);
+  transform: translateX(3px);
+}
+
+.player-links a.hudl {
+  background: var(--black);
+}
+
+.player-links a.hudl:hover {
+  background: var(--dark-gray);
+}
+
+/* =============================
+   Loading & Error States
+============================= */
+.loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--dark-gray);
+  font-size: 1.2rem;
+  padding: 60px 20px;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+
+.error {
+  grid-column: 1 / -1;
+  background: #ef4444;
+  color: var(--white);
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.no-data {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px var(--shadow);
+  border: 2px dashed var(--medium-gray);
+}
+
+.no-data h3 {
+  color: var(--dark-gray);
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.no-data p {
+  color: var(--medium-gray);
+  font-size: 1rem;
+}
+
+/* =============================
+   Responsive Design
+============================= */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    text-align: center;
   }
 
-  if (coach) {
-    container.innerHTML = `<h3>Head Coach: ${coach.name}</h3>
-                           <p>Email: <a href="mailto:${coach.email}">${coach.email}</a></p>`;
-  } else {
-    container.innerHTML = "";
+  .header-text h1 {
+    font-size: 1.8rem;
+  }
+
+  .header-text p {
+    font-size: 1rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+
+  .btn-primary {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .athlete-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .player-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-/* ==============================
-   Load Athletes
-============================== */
-window.loadBoard = async function () {
-  const gradYear = document.getElementById("gradSelect").value;
-  const sport = document.getElementById("sportSelect").value;
-  const container = document.getElementById("athleteContainer");
-
-  container.innerHTML = `<div class="loading">Loading athletes...</div>`;
-  await loadCoach(sport);
-
-  const athletesSnap = await getDocs(
-    query(collection(db, "athletes"), where("gradYear", "==", gradYear))
-  );
-
-  const athletes = {};
-  athletesSnap.forEach(d => athletes[d.id] = d.data());
-
-  const sportSnap = sport === "all"
-    ? await getDocs(collection(db, "athleteSports"))
-    : await getDocs(query(collection(db, "athleteSports"), where("sport", "==", sport)));
-
-  const players = [];
-  sportSnap.forEach(doc => {
-    const s = doc.data();
-    const a = athletes[s.athleteId];
-    if (a) players.push({ ...a, ...s });
-  });
-
-  container.innerHTML = "";
-  if (players.length === 0) {
-    container.innerHTML = `<div class="error">No athletes found for this selection.</div>`;
-    return;
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
   }
 
-  players.forEach(p => {
-    const card = document.createElement("div");
-    card.className = "player-card";
-    card.innerHTML = `
-      <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300x250'}">
-      <h3>${p.name || "Unknown"} <span class="jersey">#${p.jersey || "—"}</span></h3>
-      <p class="meta">
-        <strong>${p.sport}</strong> • ${p.position}<br>
-        ${p.height || "-"} • ${p.weight || "-"} lbs • GPA ${p.gpa || "-"}
-      </p>`;
-    container.appendChild(card);
-  });
-};
+  .logo {
+    width: 80px;
+    height: 80px;
+  }
 
-/* ==============================
-   Initial Boot
-============================== */
-(async function init() {
-  await loadGradYears();
-  await loadSports();
-  await loadBoard();
+  .header-text h1 {
+    font-size: 1.5rem;
+  }
 
-  document.getElementById("gradSelect").addEventListener("change", loadBoard);
-  document.getElementById("sportSelect").addEventListener("change", loadBoard);
-})();
+  .player-card h3 {
+    font-size: 1.2rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-</script>
+  .player-photo {
+    height: 220px;
+  }
+}
