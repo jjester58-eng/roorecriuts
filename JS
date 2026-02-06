@@ -161,13 +161,13 @@ async function loadBoard() {
 /* ==============================
    Initial Boot
 ============================== */
-await loadGradYears();
-await loadSports();
+(async function init() {
+  await loadGradYears();
+  await loadSports();
+  await loadBoard();
 
-// Automatically reload athletes when dropdowns change
-document.getElementById("gradSelect").addEventListener("change", loadBoard);
-document.getElementById("sportSelect").addEventListener("change", loadBoard);
+  document.getElementById("gradSelect").addEventListener("change", loadBoard);
+  document.getElementById("sportSelect").addEventListener("change", loadBoard);
+})();
 
-// Initial display
-loadBoard();
 </script>
