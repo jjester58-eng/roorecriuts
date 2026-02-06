@@ -75,25 +75,28 @@
 <div id="athleteContainer"></div>
 
 <script type="module">
+  // ✅ Imports go at the very top
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
 
-  /* =========================
-     FIREBASE (roo-recruits)
-  ========================= */
+  // ✅ Firebase configuration object
   const firebaseConfig = {
     apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
-  authDomain: "roosports-117c3.firebaseapp.com",
-  projectId: "roosports-117c3",
-  storageBucket: "roosports-117c3.firebasestorage.app",
-  messagingSenderId: "894863108698",
-  appId: "1:894863108698:web:2e3229b93bca82accc4663",
-  measurementId: "G-HH4CJNWWH0"
-};
+    authDomain: "roosports-117c3.firebaseapp.com",
+    projectId: "roosports-117c3",
+    storageBucket: "roosports-117c3.appspot.com",   // corrected
+    messagingSenderId: "894863108698",
+    appId: "1:894863108698:web:2e3229b93bca82accc4663",
+    measurementId: "G-HH4CJNWWH0"
+  };
 
+  // ✅ Initialize Firebase
   const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
   const db = getFirestore(app);
 
+  // ✅ DOM elements
   const gradSelect = document.getElementById("gradSelect");
   const sportSelect = document.getElementById("sportSelect");
   const athleteContainer = document.getElementById("athleteContainer");
@@ -101,6 +104,7 @@
 
   let athletes = [];
   let coaches = [];
+</script>
 
   /* =========================
      LOAD DATA
