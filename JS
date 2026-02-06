@@ -1,3 +1,4 @@
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
@@ -8,12 +9,13 @@ const firebaseConfig = {
   apiKey: "AIzaSyB0DxK1oKMbpC38mH9_fP6XzTOmNwZh-Go",
   authDomain: "roosports-117c3.firebaseapp.com",
   projectId: "roosports-117c3",
-  storageBucket: "roosports-117c3.appspot.com",
+  storageBucket: "roosports-117c3.firebasestorage.app",
   messagingSenderId: "894863108698",
   appId: "1:894863108698:web:2e3229b93bca82accc4663",
   measurementId: "G-HH4CJNWWH0"
 };
 
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -31,12 +33,10 @@ async function loadGradYears() {
     snap.forEach(doc => {
       const gradYear = doc.data().gradYear;
       if (gradYear) {
-        // Keep as string to match Firebase
         years.add(String(gradYear));
       }
     });
 
-    // Convert to array and sort numerically
     const sortedYears = [...years].sort((a, b) => parseInt(a) - parseInt(b));
     
     if (sortedYears.length === 0) {
@@ -47,7 +47,7 @@ async function loadGradYears() {
     select.innerHTML = '';
     sortedYears.forEach(y => {
       const opt = document.createElement("option");
-      opt.value = y; // Keep as string
+      opt.value = y;
       opt.textContent = `Class of ${y}`;
       select.appendChild(opt);
     });
@@ -98,13 +98,11 @@ async function loadCoaches(sport) {
     let coachSnap;
     
     if (sport === "all") {
-      // Show Athletic Director and Assistant Athletic Director
       coachSnap = await getDocs(
         query(collection(db, "coaches"), 
         where("title", "in", ["Athletic Director", "Assistant Athletic Director"]))
       );
     } else {
-      // Show coach for the selected sport
       coachSnap = await getDocs(
         query(collection(db, "coaches"), where("sport", "==", sport))
       );
@@ -120,7 +118,6 @@ async function loadCoaches(sport) {
       coaches.push(doc.data());
     });
 
-    // Sort: Athletic Director first, then Assistant AD, then alphabetically
     coaches.sort((a, b) => {
       if (a.title === "Athletic Director") return -1;
       if (b.title === "Athletic Director") return 1;
@@ -159,26 +156,12 @@ function createPlayerCard(player) {
   const card = document.createElement("div");
   card.className = "player-card";
   
-  // Build stats array dynamically
   const stats = [];
-  
-  if (player.position) {
-    stats.push({ label: "Position", value: player.position });
-  }
-  
-  if (player.height) {
-    stats.push({ label: "Height", value: player.height });
-  }
-  
-  if (player.weight) {
-    stats.push({ label: "Weight", value: `${player.weight} lbs` });
-  }
-  
-  if (player.gpa) {
-    stats.push({ label: "GPA", value: player.gpa });
-  }
-  
-  // Build stats HTML
+  if (player.position) stats.push({ label: "Position", value: player.position });
+  if (player.height) stats.push({ label: "Height", value: player.height });
+  if (player.weight) stats.push({ label: "Weight", value: `${player.weight} lbs` });
+  if (player.gpa) stats.push({ label: "GPA", value: player.gpa });
+
   let statsHTML = '';
   if (stats.length > 0) {
     statsHTML = '<div class="player-stats">';
@@ -192,40 +175,28 @@ function createPlayerCard(player) {
     });
     statsHTML += '</div>';
   }
-  
-  // Build links
+
   let linksHTML = '';
   if (player.hudl || player.twitter) {
     linksHTML = '<div class="player-links">';
-    
-    if (player.hudl) {
-      linksHTML += `<a href="${player.hudl}" target="_blank" rel="noopener noreferrer" class="hudl">🎥 Hudl</a>`;
-    }
-    
-    if (player.twitter) {
-      linksHTML += `<a href="${player.twitter}" target="_blank" rel="noopener noreferrer" class="twitter">𝕏 Twitter/X</a>`;
-    }
-    
+    if (player.hudl) linksHTML += `<a href="${player.hudl}" target="_blank" rel="noopener noreferrer" class="hudl">🎥 Hudl</a>`;
+    if (player.twitter) linksHTML += `<a href="${player.twitter}" target="_blank" rel="noopener noreferrer" class="twitter">𝕏 Twitter/X</a>`;
     linksHTML += '</div>';
   }
-  
+
   card.innerHTML = `
     <img class="player-photo" 
          src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'}" 
          alt="${player.name || 'Athlete'}"
          loading="lazy"
          onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'">
-    
     <div class="card-content">
       <h3>
         <span>${player.name || 'Unknown Athlete'}</span>
         ${player.jersey ? `<span class="jersey">#${player.jersey}</span>` : ''}
       </h3>
-      
       ${player.sport ? `<div class="sport-badge">${player.sport}</div>` : ''}
-      
       ${statsHTML}
-      
       ${linksHTML}
     </div>
   `;
@@ -248,27 +219,16 @@ async function loadBoard() {
 
   container.innerHTML = '<div class="loading">Loading athletes...</div>';
   
-  // Load coaches
   await loadCoaches(sport);
 
   try {
-    // Keep gradYear as string to match Firebase
-    console.log('Querying for gradYear (string):', gradYear, 'Type:', typeof gradYear);
-    
-    // Fetch athletes for the selected grad year
     const athletesSnap = await getDocs(
       query(collection(db, "athletes"), where("gradYear", "==", gradYear))
     );
 
-    console.log('Found athletes:', athletesSnap.size);
-
     const athletes = {};
-    athletesSnap.forEach(d => {
-      athletes[d.id] = d.data();
-      console.log('Athlete:', d.id, d.data());
-    });
+    athletesSnap.forEach(d => athletes[d.id] = d.data());
 
-    // Fetch sports data
     let sportSnap;
     if (sport === "all") {
       sportSnap = await getDocs(collection(db, "athleteSports"));
@@ -278,54 +238,26 @@ async function loadBoard() {
       );
     }
 
-    console.log('Found sport records:', sportSnap.size);
-
     const players = [];
     sportSnap.forEach(doc => {
       const sportData = doc.data();
       const athlete = athletes[sportData.athleteId];
-      
-      if (athlete) {
-        players.push({
-          ...athlete,
-          ...sportData,
-          id: doc.id
-        });
-      } else {
-        console.log('No matching athlete for athleteId:', sportData.athleteId);
-      }
+      if (athlete) players.push({ ...athlete, ...sportData, id: doc.id });
     });
 
-    console.log('Total players matched:', players.length);
-
-    // Sort by name
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-    // Display results
     container.innerHTML = "";
-    
+
     if (players.length === 0) {
-      container.innerHTML = `
-        <div class="no-data">
-          <h3>No Athletes Found</h3>
-          <p>No athletes found for Class of ${gradYear} ${sport === 'all' ? '' : '- ' + sport}</p>
-        </div>
-      `;
+      container.innerHTML = `<div class="no-data"><h3>No Athletes Found</h3><p>No athletes found for Class of ${gradYear} ${sport === 'all' ? '' : '- ' + sport}</p></div>`;
       return;
     }
 
-    players.forEach(player => {
-      container.appendChild(createPlayerCard(player));
-    });
+    players.forEach(player => container.appendChild(createPlayerCard(player)));
 
   } catch (err) {
     console.error('Error loading athletes:', err);
-    container.innerHTML = `
-      <div class="error">
-        Error loading athletes: ${err.message}
-        <br><small>Please check your connection and try again.</small>
-      </div>
-    `;
+    container.innerHTML = `<div class="error">Error loading athletes: ${err.message}</div>`;
   }
 }
 
@@ -338,15 +270,11 @@ async function loadBoard() {
     await loadSports();
     await loadBoard();
 
-    // Add event listeners
     document.getElementById("gradSelect").addEventListener("change", loadBoard);
     document.getElementById("sportSelect").addEventListener("change", loadBoard);
   } catch (err) {
     console.error("Initialization error:", err);
-    document.getElementById("athleteContainer").innerHTML = `
-      <div class="error">
-        Failed to initialize application: ${err.message}
-      </div>
-    `;
+    document.getElementById("athleteContainer").innerHTML = `<div class="error">Failed to initialize application: ${err.message}</div>`;
   }
 })();
+</script>
