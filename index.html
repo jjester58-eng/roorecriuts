@@ -33,20 +33,12 @@
       align-items: center;
     }
 
-    .controls select, .controls button {
+    .controls select {
       padding: 10px 15px;
       font-size: 16px;
       border-radius: 6px;
       cursor: pointer;
     }
-
-    .controls button {
-      border: none;
-      font-weight: 600;
-    }
-
-    .controls button:first-of-type { background: #667eea; color: white; }
-    .controls button:nth-of-type(2) { background: #4caf50; color: white; }
 
     /* Head Coach Box */
     #coachInfo {
@@ -121,7 +113,6 @@
     <option value="all">All Sports</option>
   </select>
 
-  <button onclick="loadBoard()">Load Athletes</button>
   <button onclick="window.open('https://script.google.com/macros/s/AKfycbxmCjicex3n6KDVPxQxkwsPVtilcpQg0_JnEwL9HsKuU6ywfnJNA1dPyQPT2abtrjTA/exec', '_blank')">
     Manage Athletes
   </button>
@@ -184,7 +175,7 @@ async function loadSports() {
 }
 
 /* Load Athletes + Head Coach */
-window.loadBoard = async function() {
+async function loadBoard() {
   const gradYear = document.getElementById("gradSelect").value;
   let sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
@@ -194,12 +185,12 @@ window.loadBoard = async function() {
   coachDiv.style.display = "none";
   coachDiv.innerHTML = "";
 
-  // 1️⃣ Get athletes for selected year
+  // Get athletes for selected year
   const athletesSnap = await getDocs(query(collection(db, "athletes"), where("gradYear", "==", gradYear)));
   const athletes = {};
   athletesSnap.forEach(d => athletes[d.id] = d.data());
 
-  // 2️⃣ Get athleteSports (filter by sport if not "all")
+  // Get athleteSports (filter by sport if not "all")
   const sportQuery = sport === "all"
     ? collection(db, "athleteSports")
     : query(collection(db, "athleteSports"), where("sport", "==", sport));
@@ -212,7 +203,7 @@ window.loadBoard = async function() {
     if (a) players.push({ ...a, ...s });
   });
 
-  // 3️⃣ Get Head Coach for sport (name + email)
+  // Head Coach Info
   if (sport !== "all") {
     const coachSnap = await getDocs(query(collection(db, "coaches"), where("sport", "==", sport)));
     if (!coachSnap.empty) {
@@ -222,8 +213,13 @@ window.loadBoard = async function() {
     }
   }
 
-  // 4️⃣ Display athlete cards
+  // Display athlete cards
   container.innerHTML = "";
+  if (players.length === 0) {
+    container.innerHTML = `<div class="error">No athletes found for this selection.</div>`;
+    return;
+  }
+
   players.forEach(p => {
     const card = document.createElement("div");
     card.className = "player-card";
@@ -231,8 +227,8 @@ window.loadBoard = async function() {
       <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300x250'}">
       <h3>${p.name || "Unknown"} <span class="jersey">#${p.jersey || "—"}</span></h3>
       <p class="meta">
-        <strong>${p.sport}</strong> • ${p.position}<br>
-        ${p.height} • ${p.weight} lbs • GPA ${p.gpa || "—"}
+        <strong>${p.sport}</strong> • ${p.position || "-"}<br>
+        ${p.height || "-"} • ${p.weight || "-"} lbs • GPA ${p.gpa || "—"}
       </p>`;
     container.appendChild(card);
   });
@@ -241,6 +237,12 @@ window.loadBoard = async function() {
 /* Boot */
 await loadGradYears();
 await loadSports();
+
+// Auto-load athletes on dropdown change
+document.getElementById("gradSelect").addEventListener("change", loadBoard);
+document.getElementById("sportSelect").addEventListener("change", loadBoard);
+
+// Initial load
 loadBoard();
 </script>
 
