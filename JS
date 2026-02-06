@@ -63,12 +63,12 @@ async function loadSports() {
    Load Head Coach Info
 ============================== */
 async function loadCoach(sport) {
-  const coachContainerId = "coachContainer";
-  let container = document.getElementById(coachContainerId);
+  const containerId = "coachContainer";
+  let container = document.getElementById(containerId);
 
   if (!container) {
     container = document.createElement("div");
-    container.id = coachContainerId;
+    container.id = containerId;
     container.className = "head-coach";
     document.body.insertBefore(container, document.getElementById("athleteContainer"));
   }
@@ -84,7 +84,7 @@ async function loadCoach(sport) {
 
   let coach = null;
   coachSnap.forEach(doc => {
-    coach = doc.data(); // take first matching coach
+    coach = doc.data();
   });
 
   if (coach) {
@@ -100,7 +100,7 @@ async function loadCoach(sport) {
 /* ==============================
    Load Athletes
 ============================== */
-window.loadBoard = async function () {
+async function loadBoard() {
   const gradYear = document.getElementById("gradSelect").value;
   const sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
@@ -108,6 +108,7 @@ window.loadBoard = async function () {
   container.innerHTML = `<div class="loading">Loading athletes...</div>`;
   await loadCoach(sport);
 
+  // Fetch athletes for the selected grad year
   const athletesSnap = await getDocs(
     query(collection(db, "athletes"), where("gradYear", "==", gradYear))
   );
@@ -115,16 +116,27 @@ window.loadBoard = async function () {
   const athletes = {};
   athletesSnap.forEach(d => athletes[d.id] = d.data());
 
-  const sportSnap = sport === "all"
-    ? await getDocs(collection(db, "athleteSports"))
-    : await getDocs(query(collection(db, "athleteSports"), where("sport", "==", sport)));
+  let players = [];
 
-  const players = [];
-  sportSnap.forEach(doc => {
-    const s = doc.data();
-    const a = athletes[s.athleteId];
-    if (a) players.push({ ...a, ...s });
-  });
+  if (sport === "all") {
+    // Merge athleteSports info for all athletes
+    const sportSnap = await getDocs(collection(db, "athleteSports"));
+    sportSnap.forEach(doc => {
+      const s = doc.data();
+      const a = athletes[s.athleteId];
+      if (a) players.push({ ...a, ...s });
+    });
+  } else {
+    // Only athletes for the selected sport
+    const sportSnap = await getDocs(
+      query(collection(db, "athleteSports"), where("sport", "==", sport))
+    );
+    sportSnap.forEach(doc => {
+      const s = doc.data();
+      const a = athletes[s.athleteId];
+      if (a) players.push({ ...a, ...s });
+    });
+  }
 
   container.innerHTML = "";
   if (players.length === 0) {
@@ -139,18 +151,24 @@ window.loadBoard = async function () {
       <img class="player-photo" src="${p.photoUrl || 'https://via.placeholder.com/300x250'}">
       <h3>${p.name || "Unknown"} <span class="jersey">#${p.jersey || "—"}</span></h3>
       <p class="meta">
-        <strong>${p.sport}</strong> • ${p.position}<br>
+        <strong>${p.sport}</strong> • ${p.position || "-"}<br>
         ${p.height || "-"} • ${p.weight || "-"} lbs • GPA ${p.gpa || "-"}
       </p>
     `;
     container.appendChild(card);
   });
-};
+}
 
 /* ==============================
    Initial Boot
 ============================== */
 await loadGradYears();
 await loadSports();
+
+// Automatically reload athletes when dropdowns change
+document.getElementById("gradSelect").addEventListener("change", loadBoard);
+document.getElementById("sportSelect").addEventListener("change", loadBoard);
+
+// Initial display
 loadBoard();
 </script>
