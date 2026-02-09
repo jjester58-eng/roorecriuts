@@ -123,10 +123,10 @@ function createPlayerCard(player) {
 
   card.innerHTML = `
     <img class="player-photo" 
-         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo '}" 
+         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'}" 
          alt="${player.name || 'Athlete'}"
          loading="lazy"
-         onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo '">
+         onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'">
     <div class="card-content">
       <h3>
         <span>${player.name || 'Unknown Athlete'}</span>
