@@ -1,5 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js ";
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js ";
 
 /* ==============================
    Firebase Configuration
@@ -32,15 +32,13 @@ async function loadFilters() {
 
     snap.forEach(doc => {
       const data = doc.data();
-      if (data.gradYear) years.add(String(data.gradYear));
+      if (data.gradYear) years.add(data.gradYear);
       if (data.sport) sports.add(data.sport.toLowerCase());
     });
 
-    // Populate Grad Year
-    const sortedYears = [...years].sort((a,b) => a - b);
+    const sortedYears = [...years].sort();
     gradSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Class of ${y}</option>`).join("");
     
-    // Populate Sports
     const sortedSports = [...sports].sort();
     sportSelect.innerHTML = `<option value="all">All Sports</option>` + 
       sortedSports.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join("");
@@ -125,10 +123,10 @@ function createPlayerCard(player) {
 
   card.innerHTML = `
     <img class="player-photo" 
-         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'}" 
+         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo '}" 
          alt="${player.name || 'Athlete'}"
          loading="lazy"
-         onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'">
+         onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo '">
     <div class="card-content">
       <h3>
         <span>${player.name || 'Unknown Athlete'}</span>
@@ -147,11 +145,11 @@ function createPlayerCard(player) {
    Load Athletes
 ============================== */
 async function loadBoard() {
-  const gradYear = document.getElementById("gradSelect").value;
+  const gradYearStr = document.getElementById("gradSelect").value;
   const sport = document.getElementById("sportSelect").value;
   const container = document.getElementById("athleteContainer");
 
-  if (!gradYear) {
+  if (!gradYearStr) {
     container.innerHTML = '<div class="loading">Please select a class year</div>';
     return;
   }
@@ -161,36 +159,47 @@ async function loadBoard() {
   await loadCoaches(sport);
 
   try {
-    const athletesSnap = await getDocs(
-      query(collection(db, "athletes"), where("gradYear", "==", gradYear))
-    );
-
-    const athletes = {};
-    athletesSnap.forEach(d => athletes[d.id] = d.data());
-
-    let sportSnap;
+    let athletesQuery;
+    
     if (sport === "all") {
-      sportSnap = await getDocs(collection(db, "athleteSports"));
+      athletesQuery = query(
+        collection(db, "athletes"), 
+        where("gradYear", "==", gradYearStr)
+      );
     } else {
-      sportSnap = await getDocs(
-        query(collection(db, "athleteSports"), where("sport", "==", sport))
+      athletesQuery = query(
+        collection(db, "athletes"),
+        where("gradYear", "==", gradYearStr),
+        where("sport", "==", sport.toLowerCase())
       );
     }
 
+    const athletesSnap = await getDocs(athletesQuery);
     const players = [];
-    sportSnap.forEach(doc => {
-      const sportData = doc.data();
-      const athlete = athletes[sportData.athleteId];
-      if (athlete) {
-        players.push({ ...athlete, ...sportData, id: doc.id });
-      }
+    
+    athletesSnap.forEach(doc => {
+      const data = doc.data();
+      players.push({
+        id: doc.id,
+        name: data.name,
+        jersey: data.jersey,
+        sport: data.sport,
+        position: data.pos,
+        height: data.ht,
+        weight: data.wt,
+        gpa: data.gpa,
+        hudl: data.hudl,
+        twitter: data.twitter,
+        photoUrl: data.photoUrl,
+        email: data.email
+      });
     });
 
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     container.innerHTML = "";
 
     if (players.length === 0) {
-      container.innerHTML = `<div class="no-data"><h3>No Athletes Found</h3><p>No athletes found for Class of ${gradYear} ${sport === 'all' ? '' : '- ' + sport}</p></div>`;
+      container.innerHTML = `<div class="no-data"><h3>No Athletes Found</h3><p>No athletes found for Class of ${gradYearStr} ${sport === 'all' ? '' : '- ' + sport}</p></div>`;
       return;
     }
 
