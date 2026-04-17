@@ -19,6 +19,51 @@ const db = getFirestore(app);
 console.log("Firebase Project ID:", db.app.options.projectId);
 
 /* ==============================
+   Coach Sport Sort Order
+============================== */
+const COACH_SPORT_ORDER = [
+  "director of athletics",
+  "athletic director",
+  "football",
+  "volleyball",
+  "boys basketball",
+  "girls basketball",
+  "boys soccer",
+  "girls soccer",
+  "baseball",
+  "softball",
+  "boys track",
+  "girls track",
+  "cross country",
+  "tennis",
+  "golf"
+];
+
+function getCoachSportIndex(coach) {
+  const sport = (coach.sport || "").toLowerCase().trim();
+  const title = (coach.title || "").toLowerCase().trim();
+
+  // Check title first for Athletic Director role
+  if (title.includes("director of athletics") || title.includes("athletic director")) {
+    return 0;
+  }
+
+  const idx = COACH_SPORT_ORDER.indexOf(sport);
+  return idx === -1 ? COACH_SPORT_ORDER.length : idx;
+}
+
+function isAthleticDirector(coach) {
+  const title = (coach.title || "").toLowerCase();
+  const sport = (coach.sport || "").toLowerCase();
+  return (
+    title.includes("director of athletics") ||
+    title.includes("athletic director") ||
+    sport.includes("director of athletics") ||
+    sport.includes("athletic director")
+  );
+}
+
+/* ==============================
    Load Grad Years & Sports
 ============================== */
 async function loadFilters() {
@@ -38,11 +83,11 @@ async function loadFilters() {
 
     const sortedYears = [...years].sort();
     gradSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Class of ${y}</option>`).join("");
-    
+
     const sortedSports = [...sports].sort();
-    sportSelect.innerHTML = `<option value="all">All Sports</option>` + 
+    sportSelect.innerHTML = `<option value="all">All Sports</option>` +
       sortedSports.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join("");
-    
+
     console.log("Filters loaded:", sortedYears.length, "years,", sortedSports.length, "sports");
   } catch (err) {
     console.error("Error loading filters:", err);
@@ -55,7 +100,7 @@ async function loadFilters() {
 ============================== */
 async function loadCoaches(selectedSport) {
   const container = document.getElementById("coachContainer");
-  
+
   try {
     let coachSnap;
     if (selectedSport === "all") {
@@ -67,16 +112,30 @@ async function loadCoaches(selectedSport) {
     const coaches = [];
     coachSnap.forEach(doc => coaches.push(doc.data()));
 
+    // Sort coaches by defined sport order
+    coaches.sort((a, b) => {
+      const aIdx = getCoachSportIndex(a);
+      const bIdx = getCoachSportIndex(b);
+      if (aIdx !== bIdx) return aIdx - bIdx;
+      // Within same sport, sort alphabetically by name
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
     if (coaches.length > 0) {
-      container.innerHTML = `<h2>🏆 Coaches</h2><div class="coach-grid">` + 
-        coaches.map(c => `
-          <div class="coach-card">
-            <h3>${c.name}</h3>
-            ${c.sport ? `<div class="sport-tag">${c.sport}</div>` : ''}
-            ${c.title ? `<div class="title">${c.title}</div>` : ''}
-            ${c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : ''}
-          </div>
-        `).join("") + `</div>`;
+      container.innerHTML = `<h2>🏆 Coaches</h2><div class="coach-grid">` +
+        coaches.map(c => {
+          const adClass = isAthleticDirector(c) ? " athletic-director" : "";
+          const adBadge = isAthleticDirector(c) ? `<span class="ad-badge">⭐ AD</span>` : "";
+          return `
+            <div class="coach-card${adClass}">
+              ${adBadge}
+              <h3>${c.name}</h3>
+              ${c.sport ? `<div class="sport-tag">${c.sport}</div>` : ''}
+              ${c.title ? `<div class="title">${c.title}</div>` : ''}
+              ${c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : ''}
+            </div>
+          `;
+        }).join("") + `</div>`;
     } else {
       container.innerHTML = "";
     }
@@ -92,7 +151,7 @@ async function loadCoaches(selectedSport) {
 function createPlayerCard(player) {
   const card = document.createElement("div");
   card.className = "player-card";
-  
+
   const stats = [];
   if (player.position) stats.push({ label: "Position", value: player.position });
   if (player.height) stats.push({ label: "Height", value: player.height });
@@ -122,8 +181,8 @@ function createPlayerCard(player) {
   }
 
   card.innerHTML = `
-    <img class="player-photo" 
-         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'}" 
+    <img class="player-photo"
+         src="${player.photoUrl || 'https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'}"
          alt="${player.name || 'Athlete'}"
          loading="lazy"
          onerror="this.src='https://via.placeholder.com/300x280/4169E1/ffffff?text=No+Photo'">
@@ -137,7 +196,7 @@ function createPlayerCard(player) {
       ${linksHTML}
     </div>
   `;
-  
+
   return card;
 }
 
@@ -155,15 +214,15 @@ async function loadBoard() {
   }
 
   container.innerHTML = '<div class="loading">Loading athletes...</div>';
-  
+
   await loadCoaches(sport);
 
   try {
     let athletesQuery;
-    
+
     if (sport === "all") {
       athletesQuery = query(
-        collection(db, "athletes"), 
+        collection(db, "athletes"),
         where("gradYear", "==", gradYearStr)
       );
     } else {
@@ -176,7 +235,7 @@ async function loadBoard() {
 
     const athletesSnap = await getDocs(athletesQuery);
     const players = [];
-    
+
     athletesSnap.forEach(doc => {
       const data = doc.data();
       players.push({
@@ -222,7 +281,7 @@ async function loadBoard() {
 
     document.getElementById("gradSelect").addEventListener("change", loadBoard);
     document.getElementById("sportSelect").addEventListener("change", loadBoard);
-    
+
     console.log("App initialized successfully");
   } catch (err) {
     console.error("Initialization error:", err);
